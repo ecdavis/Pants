@@ -21,7 +21,6 @@
 ###############################################################################
 
 import collections
-import functools
 import itertools
 import os
 import random
@@ -64,9 +63,13 @@ DNS_PORT = 53
 (A, NS, MD, MF, CNAME, SOA, MB, MG, MR, NULL, WKS, PTR, HINFO, MINFO, MX, TXT,
  RP, AFSDB, X25, ISDN, RT, NSAP, NSAP_PTR, SIG, KEY, PX, GPOS, AAAA, LOC, NXT,
  EID, NIMLOC, SRV, ATMA, NAPTR, KX, CERT, A6, DNAME, SINK, OPT, APL, DS, SSHFP,
- IPSECKEY, RRSIG, NSEC, DNSKEY, DHCID, NSEC3, NSEC3PARAM) = range(1,52)
+ IPSECKEY, RRSIG, NSEC, DNSKEY, DHCID, NSEC3, NSEC3PARAM) = range(1, 52)
 
-QTYPES = "A, NS, MD, MF, CNAME, SOA, MB, MG, MR, NULL, WKS, PTR, HINFO, MINFO, MX, TXT, RP, AFSDB, X25, ISDN, RT, NSAP, NSAP_PTR, SIG, KEY, PX, GPOS, AAAA, LOC, NXT, EID, NIMLOC, SRV, ATMA, NAPTR, KX, CERT, A6, DNAME, SINK, OPT, APL, DS, SSHFP, IPSECKEY, RRSIG, NSEC, DNSKEY, DHCID, NSEC3, NSEC3PARAM".split(', ')
+QTYPES = ("A, NS, MD, MF, CNAME, SOA, MB, MG, MR, NULL, WKS, PTR, HINFO, "
+          "MINFO, MX, TXT, RP, AFSDB, X25, ISDN, RT, NSAP, NSAP_PTR, SIG, "
+          "KEY, PX, GPOS, AAAA, LOC, NXT, EID, NIMLOC, SRV, ATMA, NAPTR, KX, "
+          "CERT, A6, DNAME, SINK, OPT, APL, DS, SSHFP, IPSECKEY, RRSIG, NSEC, "
+          "DNSKEY, DHCID, NSEC3, NSEC3PARAM").split(', ')
 
 # OPCODEs
 OP_QUERY = 0
@@ -82,6 +85,7 @@ DEFAULT_SERVERS = [
     '8.8.8.8'
     ]
 
+
 # Internal Exception
 class TooShortError(ValueError):
     pass
@@ -93,7 +97,8 @@ RDATA_TYPES = {
     MD: 'name',
     MF: 'name',
     CNAME: 'name',
-    SOA: (('mname', 'name'), ('rname', 'name'), ('serial|refresh|retry|expire|minimum', '!LlllL')),
+    SOA: (('mname', 'name'), ('rname', 'name'),
+          ('serial|refresh|retry|expire|minimum', '!LlllL')),
     MB: 'name',
     MG: 'name',
     MR: 'name',
@@ -117,9 +122,9 @@ RDATA_TYPES = {
 
 RDATA_TUPLES = {}
 
-for k,v in RDATA_TYPES.iteritems():
+for k, v in RDATA_TYPES.iteritems():
     # Get the Name.
-    nm = '%s_Record' % QTYPES[k-1]
+    nm = '%s_Record' % QTYPES[k - 1]
 
     if v == 'strs':
         continue
@@ -178,7 +183,8 @@ if os.name == 'nt':
                 result = 234
 
         if result != 234:
-            raise Exception("Unexpected result calling DnsQueryConfig, %d." % result)
+            msg = "Unexpected result calling DnsQueryConfig, %d"
+            raise Exception(msg % result)
 
         # Now, call it.
         buf = create_string_buffer(needed.value)
@@ -191,19 +197,20 @@ if os.name == 'nt':
             ips = (needed.value - 4) / 4
         else:
             # Some kind of magic.
-            ips = struct.unpack('I',buf[0:4])[0]
+            ips = struct.unpack('I', buf[0:4])[0]
 
         # Do crazy stuff.
         out = []
         for i in xrange(ips):
-            start = (i+1) * 4
-            out.append(socket.inet_ntoa(buf[start:start+4]))
+            start = (i + 1) * 4
+            out.append(socket.inet_ntoa(buf[start:start + 4]))
 
         out.extend(DEFAULT_SERVERS)
         return out
 
     # Additional Functions
-    if not hasattr(socket, 'inet_pton') and hasattr(windll, 'ws2_32') and hasattr(windll.ws2_32, 'inet_pton'):
+    if not hasattr(socket, 'inet_pton') and hasattr(windll, 'ws2_32') and \
+       hasattr(windll.ws2_32, 'inet_pton'):
         _inet_pton = windll.ws2_32.inet_pton
         _inet_pton.argtypes = [
             c_int,              # __in  INT Family,
@@ -237,7 +244,8 @@ if os.name == 'nt':
 
             result = _inet_pton(address_family, ip_string, buf)
             if result == 0:
-                raise socket.error("illegal IP address string passed to inet_pton")
+                msg = "illegal IP address string passed to inet_pton"
+                raise socket.error(msg)
             elif result != 1:
                 raise socket.error("unknown error calling inet_pton")
 
@@ -245,7 +253,10 @@ if os.name == 'nt':
 
         socket.inet_pton = inet_pton
 
-    if not hasattr(socket, 'inet_ntop') and hasattr(windll, 'ws2_32') and hasattr(windll.ws2_32, 'inet_ntop'):
+    needs_inet_ntop = (not hasattr(socket, 'inet_ntop')
+                       and hasattr(windll, 'ws2_32')
+                       and hasattr(windll.ws2_32, 'inet_ntop'))
+    if needs_inet_ntop:
         _inet_ntop = windll.ws2_32.inet_ntop
         _inet_ntop.argtypes = [
             c_int,              # __in  INT Family,
@@ -287,14 +298,15 @@ if os.name == 'nt':
 
         socket.inet_ntop = inet_ntop
 
-    host_path = os.path.join(os.path.expandvars("%SystemRoot%"), "system32", "drivers", "etc", "hosts")
+    host_path = os.path.join(os.path.expandvars("%SystemRoot%"), "system32",
+                             "drivers", "etc", "hosts")
 
 else:
     # *nix is way easier. Parse resolve.conf.
     def list_dns_servers():
         out = []
         try:
-            with open('/etc/resolv.conf','r') as f:
+            with open('/etc/resolv.conf', 'r') as f:
                 for l in f.readlines():
                     if l.startswith('nameserver '):
                         out.append(l[11:].strip())
@@ -313,6 +325,7 @@ else:
 hosts = {A: {}, AAAA: {}}
 host_m = None
 host_time = None
+
 
 def load_hosts():
     global host_m
@@ -370,6 +383,7 @@ load_hosts()
 # DNSMessage Class
 ###############################################################################
 
+
 class DNSMessage(object):
     """
     This class stores all the information used in a DNS message, and can either
@@ -380,8 +394,8 @@ class DNSMessage(object):
     server, simply use str() on it. To read a message from the server into an
     instance of DNSMessage, use DNSMessage.from_string().
     """
-    __slots__ = ('id','qr','opcode','aa','tc','rd','ra','rcode','server',
-                'questions','answers','authrecords','additional')
+    __slots__ = ('id', 'qr', 'opcode', 'aa', 'tc', 'rd', 'ra', 'rcode',
+                 'server', 'questions', 'answers', 'authrecords', 'additional')
 
     def __init__(self, id=None, qr=False, opcode=OP_QUERY, aa=False, tc=False,
                     rd=True, ra=True, rcode=DNS_OK):
@@ -429,7 +443,9 @@ class DNSMessage(object):
 
             out += '\x00' + struct.pack('!2H', qtype, qclass)
 
-        for q in itertools.chain(self.answers, self.authrecords, self.additional):
+        q_chain = itertools.chain(self.answers, self.authrecords,
+                                  self.additional)
+        for q in q_chain:
             name, typ, clss, ttl, rdata = q
 
             for part in name.split('.'):
@@ -444,7 +460,7 @@ class DNSMessage(object):
 
         if limit:
             tc = len(out) + 12 > limit
-            out = out[:(limit-12)]
+            out = out[:(limit - 12)]
         else:
             tc = self.tc
 
@@ -498,17 +514,20 @@ class DNSMessage(object):
                 self.questions.append((qname, qtype, qclass))
 
             for i in xrange(ancount):
-                name, typ, clss, ttl, rdata, bytes = readAnswer(data, full_data)
+                name, typ, clss, ttl, rdata, bytes = readAnswer(data,
+                                                                full_data)
                 data = data[bytes:]
                 self.answers.append((name, typ, clss, ttl, rdata))
 
             for i in xrange(nscount):
-                name, typ, clss, ttl, rdata, bytes = readAnswer(data, full_data)
+                name, typ, clss, ttl, rdata, bytes = readAnswer(data,
+                                                                full_data)
                 data = data[bytes:]
                 self.authrecords.append((name, typ, clss, ttl, rdata))
 
             for i in xrange(arcount):
-                name, typ, clss, ttl, rdata, bytes = readAnswer(data, full_data)
+                name, typ, clss, ttl, rdata, bytes = readAnswer(data,
+                                                                full_data)
                 data = data[bytes:]
                 self.additional.append((name, typ, clss, ttl, rdata))
 
@@ -521,6 +540,7 @@ class DNSMessage(object):
 ###############################################################################
 # Message Reading Functions
 ###############################################################################
+
 
 def readName(data, full_data=None):
     """
@@ -557,12 +577,13 @@ def readName(data, full_data=None):
             raise TooShortError
 
         if name:
-            name += '.%s' % data[1:l+1]
+            name += '.%s' % data[1:l + 1]
         else:
-            name = data[1:l+1]
-        data = data[1+l:]
+            name = data[1:l + 1]
+        data = data[1 + l:]
 
     return name, orig - len(data)
+
 
 def readAnswer(data, full_data):
     """
@@ -590,6 +611,7 @@ def readAnswer(data, full_data):
 
     return name, typ, clss, ttl, rdata, orig - len(data)
 
+
 def readQuery(data, full_data):
     """
     Read a query from a DNS message.
@@ -609,6 +631,7 @@ def readQuery(data, full_data):
 
     return qname, qtype, qclass, (orig - len(data)) + 4
 
+
 def readRDATA(data, full_data, qtype):
     """
     Read RDATA for a given QTYPE into an easy-to-use namedtuple.
@@ -623,8 +646,8 @@ def readRDATA(data, full_data, qtype):
         values = []
         while data:
             l = ord(data[0])
-            values.append(data[1:1+l:])
-            data = data[1+l:]
+            values.append(data[1:1 + l:])
+            data = data[1 + l:]
         return tuple(values)
 
     tup = RDATA_TUPLES[qtype]
@@ -647,8 +670,8 @@ def readRDATA(data, full_data, qtype):
 
         elif ft == 'lstr':
             l = ord(data[0])
-            values.append(data[1:1+l])
-            data = data[1+l:]
+            values.append(data[1:1 + l])
+            data = data[1 + l:]
 
         elif ft == 'name':
             v, bytes = readName(data, full_data)
@@ -669,6 +692,7 @@ def readRDATA(data, full_data, qtype):
 ###############################################################################
 # _DNSStream Class
 ###############################################################################
+
 
 class _DNSStream(Stream):
     """
@@ -717,6 +741,7 @@ class _DNSStream(Stream):
 ###############################################################################
 # Resolver Class
 ###############################################################################
+
 
 class Resolver(object):
     """
@@ -879,12 +904,6 @@ class Resolver(object):
 
         callback, message, df_timeout, media, _ = self._messages[data.id]
 
-        #if data.tc and media == 'udp':
-        #    self._messages[data.id] = callback, message, df_timeout, 'tcp', data
-        #    tcp = self._tcp[data.id] = _DNSStream(self, message.id)
-        #    tcp.connect(self.servers[0], DNS_PORT)
-        #    return
-
         if not data.server:
             if self._udp and self._udp.remote_addr:
                 data.server = '%s:%d' % self._udp.remote_addr
@@ -899,7 +918,8 @@ class Resolver(object):
         del self._messages[data.id]
         self._safely_call(callback, DNS_OK, data)
 
-    def query(self, name, qtype=A, qclass=IN, callback=None, timeout=10, allow_cache=True, allow_hosts=True):
+    def query(self, name, qtype=A, qclass=IN, callback=None, timeout=10,
+              allow_cache=True, allow_hosts=True):
         """
         Make a DNS request of the given QTYPE for the given name.
 
@@ -924,12 +944,16 @@ class Resolver(object):
                 cname = self._cache[name][CNAME]
 
             if qtype == A and name in hosts[A]:
-                self._safely_call(callback, DNS_OK, cname, None, (hosts[A][name], ))
+                self._safely_call(callback, DNS_OK, cname, None,
+                                  (hosts[A][name],))
 
             elif qtype == AAAA and name in hosts[AAAA]:
-                self._safely_call(callback, DNS_OK, cname, None, (hosts[AAAA][name], ))
+                self._safely_call(callback, DNS_OK, cname, None,
+                                  (hosts[AAAA][name],))
 
-        if allow_cache and name in self._cache and (qtype,qclass) in self._cache[name]:
+        if allow_cache and name in self._cache \
+           and (qtype, qclass) in self._cache[name]:
+
             cname = None
             if CNAME in self._cache[name]:
                 cname = self._cache[name][CNAME]
@@ -977,7 +1001,8 @@ class Resolver(object):
                     self._cache[name] = {}
                     if cname:
                         self._cache[name][CNAME] = cname
-                    self._cache[name][(qtype, qclass)] = time.time() + ttl, ttl, rdata
+                    self._cache[name][(qtype, qclass)] = (time.time() + ttl,
+                                                          ttl, rdata)
 
             if data.rcode != DNS_OK:
                 status = data.rcode
@@ -996,12 +1021,13 @@ resolver = Resolver()
 query = resolver.query
 send_message = resolver.send_message
 
+
 def gethostbyaddr(ip_address, callback, timeout=10):
     """
-    Returns a tuple ``(hostname, aliaslist, ipaddrlist)``, functioning similarly
-    to :func:`socket.gethostbyaddr`. When the information is available, it will
-    be passed to callback. If the attempt fails, the callback will be called
-    with None instead.
+    Returns a tuple ``(hostname, aliaslist, ipaddrlist)``, functioning
+    similarly to :func:`socket.gethostbyaddr`. When the information is
+    available, it will be passed to callback. If the attempt fails, the
+    callback will be called with None instead.
 
     ===========  ========  ============
     Argument     Default   Description
@@ -1038,7 +1064,6 @@ def gethostbyaddr(ip_address, callback, timeout=10):
     else:
         name = '.'.join(reversed(ip_address.split('.'))) + '.in-addr.arpa'
 
-
     def handle_response(status, cname, ttl, rdata):
         if status != DNS_OK:
             res = None
@@ -1054,6 +1079,7 @@ def gethostbyaddr(ip_address, callback, timeout=10):
             log.exception('Error calling callback for gethostbyaddr.')
 
     resolver.query(name, qtype=PTR, callback=handle_response, timeout=timeout)
+
 
 def gethostbyname(hostname, callback, timeout=10):
     """
@@ -1081,7 +1107,9 @@ def gethostbyname(hostname, callback, timeout=10):
         except Exception:
             log.exception('Error calling callback for gethostbyname.')
 
-    resolver.query(hostname, qtype=A, callback=handle_response, timeout=timeout)
+    resolver.query(hostname, qtype=A, callback=handle_response,
+                   timeout=timeout)
+
 
 def gethostbyname_ex(hostname, callback, timeout=10):
     """
@@ -1113,11 +1141,13 @@ def gethostbyname_ex(hostname, callback, timeout=10):
         except Exception:
             log.exception('Error calling callback for gethostbyname_ex.')
 
-    resolver.query(hostname, qtype=A, callback=handle_response, timeout=timeout)
+    resolver.query(hostname, qtype=A, callback=handle_response,
+                   timeout=timeout)
 
 ###############################################################################
 # Synchronous Support
 ###############################################################################
+
 
 class Synchroniser(object):
     __slots__ = ('_parent',)
@@ -1136,11 +1166,13 @@ class Synchroniser(object):
 
         def doer(*a, **kw):
             if pants.engine._running:
-                raise RuntimeError("synchronous calls cannot be made while Pants is already running.")
+                msg = ("synchronous calls cannot be made while Pants is "
+                       "already running.")
+                raise RuntimeError(msg)
 
             data = []
 
-            def callback(*a,**kw):
+            def callback(*a, **kw):
                 if kw:
                     if a:
                         a = a + (kw, )
