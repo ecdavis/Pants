@@ -138,10 +138,10 @@ IMAGES['icon'] = base64.b64decode(IMAGES['icon'])
 
 PAGE_CSS = u"""html, body { margin: 0; padding: 0; min-height: 100%%; }
 body {
-	font-family: Calibri,"Arial","Helvetica",sans-serif;
-	background: #EEE;
-	background-image: -webkit-gradient( linear, left bottom, left top,
-		color-stop(0, #ccc), color-stop(0.5, #eee) );
+    font-family: Calibri,"Arial","Helvetica",sans-serif;
+    background: #EEE;
+    background-image: -webkit-gradient( linear, left bottom, left top,
+        color-stop(0, #ccc), color-stop(0.5, #eee) );
     background-image: -moz-linear-gradient( center bottom, #ccc 0%%, #eee 50%% );
 }
 
@@ -160,12 +160,12 @@ table.dir td,table.dir th,.thingy > h1 { margin: 0; }
 p { margin-bottom: 0; }
 table.dir a,pre { display: block; }
 pre {
-	background: #ddd;
+    background: #ddd;
     background-color: rgba(199,199,199,0.5);
-	text-align: left;
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	padding: 5px;
+    text-align: left;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    padding: 5px;
 }
 
 table.dir { width:100%%; border-spacing: 0; }
@@ -195,11 +195,11 @@ a.audio { background-image: url("data:image/png;base64,%s"); }
 a.video { background-image: url("data:image/png;base64,%s"); }
 
 .thingy { background-color: #FFF; background-position: center; color: #000;
-	border: 5px #ddd solid;
-	-moz-border-radius: 25px;
-	border-radius: 25px;
-	padding: 50px;
-	margin: 0 50px;
+    border: 5px #ddd solid;
+    -moz-border-radius: 25px;
+    border-radius: 25px;
+    padding: 50px;
+    margin: 0 50px;
 }""" % (IMAGES['folder'], IMAGES['document'], IMAGES['image'], IMAGES['zip'],
     IMAGES['audio'], IMAGES['video'])
 PAGE_CSS = PAGE_CSS.replace('%','%%%%')
