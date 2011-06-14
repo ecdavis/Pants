@@ -56,7 +56,7 @@ def strerror(err):
         errstr = os.strerror(err)
     except (NameError, OverflowError, ValueError):
         errstr = errno.errorcode[err]
-    
+
     return errstr
 
 
@@ -67,13 +67,13 @@ def strerror(err):
 class Channel(object):
     """
     A simple interface for a socket wrapper class.
-    
+
     Channel is intended to be subclassed rather than instantiated directly.
     As such, many of its public methods (and some of its private methods)
     will raise a :exc:`NotImplementedError` if they are called. Subclasses
     should override these methods and ensure that their behaviour conforms
     to the specification in this class.
-    
+
     ==================  ============
     Keyword Arguments   Description
     ==================  ============
@@ -89,86 +89,86 @@ class Channel(object):
         sock = kwargs.get("socket", None)
         if sock is None:
             sock = socket.socket(sock_family, sock_type)
-        
+
         # Socket
         self.fileno = None
         self._socket = None
         self._socket_set(sock)
-        
+
         # Socket state
         self._wait_for_read_event = True
         self._wait_for_write_event = True
-        
+
         # I/O attributes
         self._recv_amount = 4096
         self._recv_buffer = None
         self._send_buffer = None
-        
+
         # Events
         self._events = Engine.ALL_EVENTS
         Engine.instance().add_channel(self)
-    
+
     ##### Control Methods #####################################################
-    
+
     def connect(self):
         """
         Connect the channel to a remote socket.
-        
+
         Returns the channel.
-        
+
         Not implemented in :class:`~pants.channel.Channel`.
         """
         raise NotImplementedError
-    
+
     def listen(self):
         """
         Begin listening for connections made to the channel.
-        
+
         Returns the channel.
-        
+
         Not implemented in :class:`~pants.channel.Channel`.
         """
         raise NotImplementedError
-    
+
     def close(self):
         """
         Close the channel.
         """
         if self._socket is None:
             return
-        
+
         Engine.instance().remove_channel(self)
         self._socket_close()
         self._safely_call(self.on_close)
-    
+
     def end(self):
         """
         Close the channel after writing is finished.
         """
         if self._socket is None:
             return
-        
+
         if not self._send_buffer:
             self.close()
         else:
             self.on_write = self.close
-    
+
     ##### I/O Methods #########################################################
-    
+
     def write(self):
         """
         Write data to the channel.
-        
+
         Not implemented in :class:`~pants.channel.Channel`.
         """
         raise NotImplementedError
-    
+
     ##### Public Event Handlers ###############################################
-    
+
     def on_read(self, data):
         """
         Placeholder. Called when data is read from the channel.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -176,25 +176,25 @@ class Channel(object):
         =========  ============
         """
         pass
-    
+
     def on_write(self):
         """
         Placeholder. Called after the channel has finished writing data.
         """
         pass
-    
+
     def on_connect(self):
         """
         Placeholder. Called after the channel has connected to a remote
         socket.
         """
         pass
-    
+
     def on_connect_error(self, err, errstr):
         """
         Placeholder. Called when the channel has failed to connect to a
         remote socket.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -203,19 +203,19 @@ class Channel(object):
         =========  ============
         """
         pass
-    
+
     def on_listen(self):
         """
         Placeholder. Called when the channel begins listening for new
         connections.
         """
         pass
-    
+
     def on_accept(self, sock, addr):
         """
         Placeholder. Called after the channel has accepted a new
         connection.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -224,19 +224,19 @@ class Channel(object):
         =========  ============
         """
         pass
-    
+
     def on_close(self):
         """
         Placeholder. Called after the channel has finished closing.
         """
         pass
-    
+
     ##### Socket Method Wrappers ##############################################
-    
+
     def _socket_set(self, sock):
         """
         Set the channel's current socket and update channel details.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -249,17 +249,17 @@ class Channel(object):
             raise ValueError("Unsupported socket family.")
         if sock.type not in SUPPORTED_TYPES:
             raise ValueError("Unsupported socket type.")
-        
+
         sock.setblocking(False)
         self.fileno = sock.fileno()
         self._socket = sock
-    
+
     def _socket_connect(self, addr):
         """
         Connect the socket to a remote socket at the given address.
-        
+
         Returns True if the connection was immediate, False otherwise.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -270,20 +270,20 @@ class Channel(object):
             result = self._socket.connect_ex(addr)
         except socket.error, err:
             result = err[0]
-        
+
         if not result or result == errno.EISCONN:
             return True
-        
+
         if result in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EINPROGRESS, errno.EALREADY):
             self._wait_for_write_event = True
             return False
-        
+
         raise socket.error(result, strerror(result))
-    
+
     def _socket_bind(self, addr):
         """
         Bind the socket to the given address.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -291,11 +291,11 @@ class Channel(object):
         =========  ============
         """
         self._socket.bind(addr)
-    
+
     def _socket_listen(self, backlog):
         """
         Begin listening for connections made to the socket.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -305,10 +305,10 @@ class Channel(object):
         if os.name == "nt" and backlog > 5:
             log.warning("Setting backlog to 5 due to OS constraints.")
             backlog = 5
-        
+
         self._socket.listen(backlog)
         self._wait_for_read_event = True
-    
+
     def _socket_close(self):
         """
         Close the socket.
@@ -317,14 +317,14 @@ class Channel(object):
             self._socket.close()
         except (AttributeError, socket.error):
             return
-        finally:    
+        finally:
             self.fileno = None
             self._socket = None
-    
+
     def _socket_accept(self):
         """
         Accept a new connection to the socket.
-        
+
         Returns a 2-tuple containing the new socket and its remote address.
         """
         try:
@@ -335,11 +335,11 @@ class Channel(object):
                 return None, None
             else:
                 raise
-    
+
     def _socket_recv(self):
         """
         Receive data from the socket.
-        
+
         Returns a string of data read from the socket. The data is None if
         the socket has been closed.
         """
@@ -353,16 +353,16 @@ class Channel(object):
                 return None
             else:
                 raise
-        
+
         if not data:
             return None
         else:
             return data
-    
+
     def _socket_recvfrom(self):
         """
         Receive data from the socket.
-        
+
         Returns a 2-tuple containing a string of data read from the socket
         and the address of the sender. The data is None if reading failed.
         The data and address are None if no data was received.
@@ -375,18 +375,18 @@ class Channel(object):
                 return '', None
             else:
                 raise
-        
+
         if not data:
             return None, None
         else:
             return data, addr
-    
+
     def _socket_send(self, data):
         """
         Send data to the socket.
-        
+
         Returns the number of bytes that were sent to the socket.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -401,13 +401,13 @@ class Channel(object):
                 return 0
             else:
                 raise
-    
+
     def _socket_sendto(self, data, addr, flags=0):
         """
         Send data to a remote socket.
-        
+
         Returns the number of bytes that were sent to the socket.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -424,7 +424,7 @@ class Channel(object):
                 return 0
             else:
                 raise
-    
+
     def _socket_sendfile(self, sfile, offset, nbytes):
         """
         =========  ============
@@ -443,16 +443,16 @@ class Channel(object):
                 return 0
             else:
                 raise
-    
+
     ##### Internal Methods ####################################################
-    
+
     def _safely_call(self, thing_to_call, *args, **kwargs):
         """
         Safely execute a callable.
-        
+
         The callable is wrapped in a try block and executed. If an
         exception is raised it is logged.
-        
+
         ==============  ============
         Argument        Description
         ==============  ============
@@ -466,27 +466,27 @@ class Channel(object):
         except Exception:
             log.exception("Exception raised on %s #%d." %
                     (self.__class__.__name__, self.fileno))
-    
+
     def _get_socket_error(self):
         """
         Get the most recent error that occured on the socket.
-        
+
         Returns a 2-tuple containing the error code and the error message.
         """
         err = self._socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         errstr = ""
-        
+
         if err != 0:
             errstr = strerror(err)
-        
+
         return err, errstr
-    
+
     ##### Internal Event Handler Methods ######################################
-    
+
     def _handle_events(self, events):
         """
         Handle events raised on the channel.
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -497,19 +497,19 @@ class Channel(object):
             log.warning("Received events for closed %s #%d." %
                     (self.__class__.__name__, self.fileno))
             return
-        
+
         if events & Engine.READ:
             self._wait_for_read_event = False
             self._handle_read_event()
             if self._socket is None:
                 return
-        
+
         if events & Engine.WRITE:
             self._wait_for_write_event = False
             self._handle_write_event()
             if self._socket is None:
                 return
-        
+
         if events & Engine.ERROR:
             err, errstr = self._get_socket_error()
             if err != 0:
@@ -517,13 +517,13 @@ class Channel(object):
                         (self.__class__.__name__, self.fileno, errstr, err))
             self.close()
             return
-        
+
         if events & Engine.HANGUP:
             log.debug("Hang up on %s #%d." %
                     (self.__class__.__name__, self.fileno))
             self.close()
             return
-        
+
         events = Engine.ERROR | Engine.HANGUP
         if self._wait_for_read_event:
             events |= Engine.READ
@@ -532,19 +532,19 @@ class Channel(object):
         if events != self._events:
             self._events = events
             Engine.instance().modify_channel(self)
-    
+
     def _handle_read_event(self):
         """
         Handle a read event raised on the channel.
-        
+
         Not implemented in :class:`~pants.channel.Channel`.
         """
         raise NotImplementedError
-    
+
     def _handle_write_event(self):
         """
         Handle a write event raised on the channel.
-        
+
         Not implemented in :class:`~pants.channel.Channel`.
         """
         raise NotImplementedError
