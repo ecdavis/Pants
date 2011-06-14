@@ -71,7 +71,7 @@ class Server(Stream):
     ConnectionClass   *Optional.* A :obj:`pants.network.Connection` subclass with which to wrap newly connected sockets.
     ================  ============
     """
-    #: A :obj:`pants.network.Connection` subclass with which to wrap newly connected sockets.
+
     ConnectionClass = Connection
 
     def __init__(self, ConnectionClass=None):
@@ -81,7 +81,7 @@ class Server(Stream):
         if ConnectionClass:
             self.ConnectionClass = ConnectionClass
 
-        self.channels = weakref.WeakValueDictionary() # fd : channel
+        self.channels = weakref.WeakValueDictionary()  # fd : channel
 
     ##### Public Event Handlers ###############################################
 
