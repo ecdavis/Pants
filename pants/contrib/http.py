@@ -40,7 +40,7 @@ else:
 from time import time as curtime
 
 from datetime import datetime
-from pants import callback, Connection, Server, __version__ as pants_version
+from pants import callback, Connection, __version__ as pants_version
 from pants.engine import Engine
 from pants.stream import Stream
 from pants.contrib.ssl import SSLServer
@@ -55,8 +55,8 @@ log = logging.getLogger('http')
 # Constants
 ###############################################################################
 
-SERVER      = 'HTTPants (pants/%s)' % pants_version
-SERVER_URL  = 'http://www.pantsweb.org/'
+SERVER = 'HTTPants (pants/%s)' % pants_version
+SERVER_URL = 'http://www.pantsweb.org/'
 
 USER_AGENT = "HTTPants/%s" % pants_version
 
@@ -113,6 +113,7 @@ HTTP = {
     505: 'HTTP Version Not Supported'
 }
 
+
 class BadRequest(Exception):
     def __init__(self, message, code='400 Bad Request'):
         Exception.__init__(self, message)
@@ -121,6 +122,7 @@ class BadRequest(Exception):
 ###############################################################################
 # HTTPClient Class
 ###############################################################################
+
 
 class HTTPClient(object):
     """
@@ -436,7 +438,7 @@ class HTTPClient(object):
             return
 
         # Did we catch a redirect?
-        if response.status in (301,302) and request[9] <= self.max_redirects:
+        if response.status in (301, 302) and request[9] <= self.max_redirects:
             # Generate a new request, using the new URL.
             new_url = urlparse.urljoin(response.full_url,
                         response.headers['Location'])
@@ -468,7 +470,7 @@ class HTTPClient(object):
 
         # Try converting to unicode?
         if self.unicode:
-            content_type = response.headers.get('Content-Type','')
+            content_type = response.headers.get('Content-Type', '')
             if 'charset=' in content_type:
                 content_type, _, encoding = content_type.partition('charset=')
                 try:
@@ -541,7 +543,7 @@ class HTTPClient(object):
         # Did we get an additional header for Content-Encoding?
         enc = resp.headers.get('Content-Encoding', '')
 
-        for k,v in headers.iteritems():
+        for k, v in headers.iteritems():
             if k in resp.headers:
                 if not isinstance(resp.headers[k], list):
                     resp.headers[k] = [resp.headers[k]]
@@ -568,8 +570,6 @@ class HTTPClient(object):
         """
         if ';' in data:
             data, ext = data.split(';', 1)
-        else:
-            ext = ''
 
         length = int(data.strip(), 16)
 
@@ -633,7 +633,8 @@ class HTTPClient(object):
             if 'Content-Encoding' in headers:
                 encoding = headers['Content-Encoding']
                 if encoding == 'gzip':
-                    response._decompressor = zlib.decompressobj(16+zlib.MAX_WBITS)
+                    response._decompressor = zlib.decompressobj(
+                        16 + zlib.MAX_WBITS)
                 elif encoding == 'deflate':
                     response._decompressor = zlib.decompressobj(-zlib.MAX_WBITS)
 
@@ -647,7 +648,8 @@ class HTTPClient(object):
                     self._stream.on_read = self._read_chunk_head
                     self._stream.read_delimiter = CRLF
                 else:
-                    raise BadRequest("Unsupported Transfer-Encoding: %s" % headers['Transfer-Encoding'])
+                    raise BadRequest("Unsupported Transfer-Encoding: %s" % (
+                        headers['Transfer-Encoding'],))
 
             # Is this a HEAD request? If so, then handle the request NOW.
             if response.method == 'HEAD':
@@ -669,6 +671,7 @@ class HTTPClient(object):
             if self._stream:
                 self._stream.close()
                 self._stream = None
+
 
 class ClientHelper(object):
     """
@@ -729,6 +732,7 @@ class ClientHelper(object):
 ###############################################################################
 # HTTPResponse Class
 ###############################################################################
+
 
 class HTTPResponse(object):
     """
@@ -808,6 +812,7 @@ class HTTPResponse(object):
 # HTTPConnection Class
 ###############################################################################
 
+
 class HTTPConnection(Connection):
     """
     Instances of this class represent connections received by an
@@ -870,13 +875,13 @@ class HTTPConnection(Connection):
 
         if self.server.keep_alive:
             headers = self.current_request.headers
-            connection = headers.get('Connection','').lower()
+            connection = headers.get('Connection', '').lower()
 
             if self.current_request.version == 'HTTP/1.1':
                 disconnect = connection == 'close'
 
             elif 'Content-Length' in headers or \
-                    self.current_request.method in ('HEAD','GET'):
+                    self.current_request.method in ('HEAD', 'GET'):
                 disconnect = connection != 'keep-alive'
 
         self.current_request = None
@@ -928,7 +933,7 @@ class HTTPConnection(Connection):
                         ) % (length, self.server.max_request),
                         code='413 Request Entity Too Large')
 
-                if headers.get('Expect','').lower() == '100-continue':
+                if headers.get('Expect', '').lower() == '100-continue':
                     self.write("%s 100 (Continue)%s" % (
                         http_version, DOUBLE_CRLF))
 
@@ -967,7 +972,7 @@ class HTTPConnection(Connection):
 
         try:
             content_type = request.headers.get('Content-Type', '')
-            if request.method in ('POST','PUT'):
+            if request.method in ('POST', 'PUT'):
                 if content_type.startswith('application/x-www-form-urlencoded'):
                     for key, val in urlparse.parse_qs(data, False).iteritems():
                         request.post[key] = val
@@ -1004,6 +1009,7 @@ class HTTPConnection(Connection):
 # HTTPRequest Class
 ###############################################################################
 
+
 class HTTPRequest(object):
     """
     Instances of this class represent single HTTP requests that an
@@ -1028,12 +1034,12 @@ class HTTPRequest(object):
 
     def __init__(self, connection, method, uri, http_version, headers=None,
                  protocol='http'):
-        self.body       = ''
+        self.body = ''
         self.connection = connection
-        self.headers    = headers or {}
-        self.method     = method
-        self.uri        = uri
-        self.version    = http_version
+        self.headers = headers or {}
+        self.method = method
+        self.uri = uri
+        self.version = http_version
 
         # X-Headers
         if connection.server.xheaders:
@@ -1048,38 +1054,39 @@ class HTTPRequest(object):
             self.remote_ip = remote_ip
             self.protocol = self.headers.get('X-Forwarded-Proto', protocol)
         else:
-            self.remote_ip  = connection.remote_addr[0]
-            self.protocol   = protocol
+            self.remote_ip = connection.remote_addr[0]
+            self.protocol = protocol
 
         # Calculated Variables
-        self.host       = self.headers.get('Host', '127.0.0.1')
+        self.host = self.headers.get('Host', '127.0.0.1')
 
         # Timing Information
-        self._start     = time()
-        self._finish    = None
+        self._start = time()
+        self._finish = None
 
         # Request Variables
-        self.post       = {}
-        self.files      = {}
+        self.post = {}
+        self.files = {}
 
         # Split the URI into usable information.
         self._parse_uri()
 
     def __repr__(self):
-        attr = ('version','method','protocol','host','uri','path','time')
-        attr = u', '.join(u'%s=%r' % (k,getattr(self,k)) for k in attr)
+        attr = ('version', 'method', 'protocol', 'host', 'uri', 'path', 'time')
+        attr = u', '.join(u'%s=%r' % (k, getattr(self, k)) for k in attr)
         return u'%s(%s, headers=%r)' % (
             self.__class__.__name__, attr, self.headers)
 
     def __html__(self):
-        attr = ('version','method','remote_ip','protocol','host','uri','path',
-                'time')
-        attr = u'\n    '.join(u'%-8s = %r' % (k,getattr(self,k)) for k in attr)
+        attr = ('version', 'method', 'remote_ip', 'protocol', 'host', 'uri',
+                'path', 'time')
+        attr = u'\n    '.join(
+            u'%-8s = %r' % (k, getattr(self, k)) for k in attr)
 
         out = u'<pre>%s(\n    %s\n\n' % (self.__class__.__name__, attr)
 
-        for i in ('headers','get','post'):
-            if getattr(self,i):
+        for i in ('headers', 'get', 'post'):
+            if getattr(self, i):
                 out += u'    %-8s = {\n %s\n        }\n\n' % (
                     i, pprint.pformat(getattr(self, i), 8, 80)[1:-1])
             else:
@@ -1087,7 +1094,6 @@ class HTTPRequest(object):
 
         if hasattr(self, '_cookies') and self.cookies:
             out += u'    cookies  = {\n'
-            keys = list(self.cookies.__iter__())
             for k in self.cookies:
                 out += u'        %r: %r\n' % (k, self.cookies[k].value)
             out += u'        }\n\n'
@@ -1140,7 +1146,7 @@ class HTTPRequest(object):
 
     ##### Secure Cookies ######################################################
 
-    def set_secure_cookie(self, name, value, expires=30*86400, **kwargs):
+    def set_secure_cookie(self, name, value, expires=30 * 86400, **kwargs):
         """
         Set a timestamp on a cookie and sign it, ensuring that it can't be
         altered by the client. To use this, the :class:`HTTPServer` *must* have
@@ -1171,7 +1177,7 @@ class HTTPRequest(object):
         m = self.cookies[name]
 
         if kwargs:
-            for k,v in kwargs.iteritems():
+            for k, v in kwargs.iteritems():
                 m[k] = v
         m['expires'] = expires
 
@@ -1184,7 +1190,7 @@ class HTTPRequest(object):
             value, expires, ts, signature = self.cookies[name].value.split('|')
             expires = int(expires)
             ts = int(ts)
-        except AttributeError, ValueError:
+        except (AttributeError, ValueError):
             print 'boo'
             return None
 
@@ -1324,8 +1330,8 @@ class HTTPRequest(object):
 
     def _parse_uri(self):
         path, query = urlparse.urlsplit(self.uri)[2:4]
-        self.path   = path
-        self.query  = query
+        self.path = path
+        self.query = query
 
         self.get = get = {}
         if query:
@@ -1337,6 +1343,7 @@ class HTTPRequest(object):
 ###############################################################################
 # HTTPServer Class
 ###############################################################################
+
 
 class HTTPServer(SSLServer):
     """
@@ -1395,12 +1402,12 @@ class HTTPServer(SSLServer):
         SSLServer.__init__(self, ssl_options=ssl_options)
 
         # Storage
-        self.request_handler    = request_handler
-        self.max_request        = max_request
-        self.keep_alive         = keep_alive
-        self.xheaders           = xheaders
+        self.request_handler = request_handler
+        self.max_request = max_request
+        self.keep_alive = keep_alive
+        self.xheaders = xheaders
 
-        self._cookie_secret     = cookie_secret
+        self._cookie_secret = cookie_secret
 
     @property
     def cookie_secret(self):
@@ -1437,14 +1444,17 @@ class HTTPServer(SSLServer):
 # Support Functions
 ###############################################################################
 
+
 def generate_signature(key, *parts):
     hash = hmac.new(key, digestmod=hashlib.sha1)
     for p in parts:
         hash.update(str(p))
     return hash.hexdigest()
 
+
 def content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
 
 def encode_multipart(vars, files=None, boundary=None):
     """
@@ -1485,6 +1495,7 @@ def encode_multipart(vars, files=None, boundary=None):
 
     return boundary, CRLF.join(out)
 
+
 def parse_multipart(request, boundary, data):
     """
     Parse a ``multipart/form-data`` request body and modify the request's
@@ -1523,7 +1534,7 @@ def parse_multipart(request, boundary, data):
             log.warning('Invalid multipart/form-data part.')
             continue
 
-        value = part[eoh+4:-2]
+        value = part[eoh + 4:-2]
         name_values = {}
         for name_part in name_header[10:].split(';'):
             name, name_value = name_part.strip().split('=', 1)
@@ -1541,6 +1552,7 @@ def parse_multipart(request, boundary, data):
                 content_type=content_type))
         else:
             request.post.setdefault(name, []).append(value)
+
 
 def read_headers(data, target=None):
     """
@@ -1586,6 +1598,7 @@ def read_headers(data, target=None):
         target[key] = val
 
     return target
+
 
 def _date(dt):
     return dt.strftime("%a, %d %b %Y %H:%M:%S GMT")
