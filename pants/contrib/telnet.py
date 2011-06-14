@@ -130,8 +130,6 @@ class TelnetConnection(Connection):
                 self._safely_call(self.on_read, data)
 
             else:
-                log.warning("Invalid read_delmiter on %s #%d." %
-                        (self.__class__.__name__, self.fileno))
                 break
 
             if self._socket is None or not self.connected:
