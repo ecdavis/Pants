@@ -21,6 +21,7 @@
 ###############################################################################
 
 import base64
+from datetime import datetime, timedelta
 import inspect
 import logging
 import mimetypes
@@ -30,22 +31,22 @@ import time
 import traceback
 import urllib
 
-from datetime import datetime, timedelta
-from pants import __version__ as pants_version
-from http import CRLF, HTTP, HTTPServer, HTTPRequest, SERVER, SERVER_URL, _date
-
 try:
     import simplejson as json
 except ImportError:
     import json
 
-__all__ = ('Application','HTTPException','HTTPTransparentRedirect','abort',
-    'all_or_404','error','json_response','jsonify','redirect','url_for',
-    'HTTPServer','FileServer')
+from http import HTTP, HTTPServer, SERVER, SERVER_URL, _date
+
+
+__all__ = ('Application', 'HTTPException', 'HTTPTransparentRedirect', 'abort',
+    'all_or_404', 'error', 'json_response', 'jsonify', 'redirect', 'url_for',
+    'HTTPServer', 'FileServer')
 
 ###############################################################################
 # Cross Platform Hidden File Detection
 ###############################################################################
+
 
 def _is_hidden(file, path):
     return file.startswith(u'.')
@@ -53,12 +54,14 @@ def _is_hidden(file, path):
 if os.name == 'nt':
     try:
         import win32api, win32con
+
         def _is_hidden(file, path):
             if file.startswith(u'.'):
                 return True
             file = os.path.join(path, file)
             try:
-                if win32api.GetFileAttributes(file) & win32con.FILE_ATTRIBUTE_HIDDEN:
+                attrs = win32api.GetFileAttributes(file)
+                if attrs & win32con.FILE_ATTRIBUTE_HIDDEN:
                     return True
             except Exception:
                 return True
@@ -202,7 +205,7 @@ a.video { background-image: url("data:image/png;base64,%s"); }
     margin: 0 50px;
 }""" % (IMAGES['folder'], IMAGES['document'], IMAGES['image'], IMAGES['zip'],
     IMAGES['audio'], IMAGES['video'])
-PAGE_CSS = PAGE_CSS.replace('%','%%%%')
+PAGE_CSS = PAGE_CSS.replace('%', '%%%%')
 
 PAGE = u"""<!DOCTYPE html>
 <html><head><title>%%s</title><style>%s</style></head><body>
@@ -210,7 +213,7 @@ PAGE = u"""<!DOCTYPE html>
 %%s
 </div><div class="footer"><i><a href="%s">%s</a><br>%%%%s</i>
 <div class="debug">%%%%s</div></div>
-<div class="spacer"></div></div></body></html>""".replace('\n','') % (
+<div class="spacer"></div></div></body></html>""".replace('\n', '') % (
     PAGE_CSS, SERVER_URL, SERVER)
 
 DIRECTORY_PAGE = PAGE % (
@@ -228,13 +231,14 @@ ERROR_PAGE = PAGE % (
 
 # Regular expressions used for various types.
 REGEXES = {
-    int     : r'(-?\d+)',
-    float   : r'(-?\d+(?:\.\d+)?)',
+    int: r'(-?\d+)',
+    float: r'(-?\d+(?:\.\d+)?)',
 }
 
 ###############################################################################
 # Special Exceptions
 ###############################################################################
+
 
 class HTTPException(Exception):
     """
@@ -263,6 +267,7 @@ class HTTPException(Exception):
         self.message = message
         self.headers = headers
 
+
 class HTTPTransparentRedirect(Exception):
     """
     Raising an instance of HTTPTransparentRedirect will cause the Application
@@ -274,6 +279,7 @@ class HTTPTransparentRedirect(Exception):
 ###############################################################################
 # Application Class
 ###############################################################################
+
 
 class Application(object):
     """
@@ -308,8 +314,8 @@ class Application(object):
 
     def __init__(self, default_domain=None, debug=False):
         # Internal Stuff
-        self._routes    = {}
-        self._names     = {}
+        self._routes = {}
+        self._names = {}
 
         self._routes[None] = {}
 
@@ -350,7 +356,7 @@ class Application(object):
 
     ##### Route Management Methods ############################################
 
-    def basic_route(self, rule, name=None, methods=['GET','HEAD']):
+    def basic_route(self, rule, name=None, methods=['GET', 'HEAD']):
         """
         The basic_route decorator registers a route with the Application without
         holding your hand over it.
@@ -398,7 +404,7 @@ class Application(object):
             return func
         return decorator
 
-    def route(self, rule, name=None, methods=['GET','HEAD'], auto404=False):
+    def route(self, rule, name=None, methods=['GET', 'HEAD'], auto404=False):
         """
         The route decorator is used to register a new request handler with the
         Application instance. Example::
@@ -487,7 +493,7 @@ class Application(object):
 
     def handle_500(self, request, exception):
         log.exception('Error handling HTTP request: %s %%s' % request.method,
-            request.uri) #, traceback.format_exc())
+            request.uri)
         if not self.debug:
             return error(500)
 
@@ -549,7 +555,7 @@ class Application(object):
         # Set a Content-Type header if there isn't already one.
         if not 'Content-Type' in headers:
             if (isinstance(body, basestring) and
-                    body[:5].lower() in ('<html','<!doc')) or \
+                    body[:5].lower() in ('<html', '<!doc')) or \
                     hasattr(body, '__html__'):
                 headers['Content-Type'] = 'text/html'
             else:
@@ -650,7 +656,7 @@ class Application(object):
                 for route in self._routes[domain]:
                     if route.match(p):
                         if request.query:
-                            return redirect('%s?%s' % (p,request.query))
+                            return redirect('%s?%s' % (p, request.query))
                         else:
                             return redirect(p)
 
@@ -666,7 +672,7 @@ class Application(object):
         self._routes[domain][route] = (handler, name, methods, nms, namegen)
         self._names[name] = route
 
-    def _add_route(self, route, view, name=None, methods=['GET','HEAD'],
+    def _add_route(self, route, view, name=None, methods=['GET', 'HEAD'],
             auto404=False):
         """ See: Application.route """
         if name is None:
@@ -709,12 +715,13 @@ class Application(object):
                         return view(request)
 
                     out = []
-                    for val,type in zip(match.groups(), arguments):
+                    for val, type in zip(match.groups(), arguments):
                         if type is not None:
                             try:
                                 val = type(val)
                             except Exception:
-                                return error('Unable to parse data %r.' % val, 400)
+                                return error('Unable to parse data %r.' % val,
+                                             400)
                         out.append(val)
 
                     if auto404 is True:
@@ -738,7 +745,7 @@ class Application(object):
                         return view()
 
                     out = []
-                    for val,type in zip(match.groups(), arguments):
+                    for val, type in zip(match.groups(), arguments):
                         if type is not None:
                             try:
                                 val = type(val)
@@ -758,11 +765,12 @@ class Application(object):
 
         view_runner.__name__ = name
         self._insert_route(_regex, view_runner, domain,
-            "%s.%s" %(view.__module__,name), methods, names, namegen)
+            "%s.%s" % (view.__module__, name), methods, names, namegen)
 
 ###############################################################################
 # FileServer Class
 ###############################################################################
+
 
 class FileServer(object):
     """
@@ -788,7 +796,7 @@ class FileServer(object):
         FileServer("/tmp/path").attach(app, "/files/")
     """
     def __init__(self, path, blacklist=[re.compile('.*\.pyc?$')],
-            defaults=['index.html','index.html'],
+            defaults=['index.html', 'index.html'],
             renderers=None):
         """
         Initialize the FileServer.
@@ -836,7 +844,8 @@ class FileServer(object):
             route: The path to listen on. Defaults to '/static/'.
         """
         route = re.compile("^%s(.*)$" % re.escape(route))
-        app._insert_route(route, self, domain, "FileServer", ['HEAD','GET'], None, None)
+        app._insert_route(route, self, domain, "FileServer", ['HEAD', 'GET'],
+                          None, None)
 
     def check_blacklist(self, path):
         """
@@ -915,14 +924,14 @@ class FileServer(object):
         etag = '"%x-%x"' % (size, int(mtime))
 
         headers = {
-            'Last-Modified' : _date(modified),
-            'Expires'       : _date(expires),
-            'Cache-Control' : 'max-age=604800',
-            'Content-Type'  : type,
-            'Date'          : _date(datetime.utcnow()),
-            'Server'        : SERVER,
-            'Accept-Ranges' : 'bytes',
-            'ETag'          : etag
+            'Last-Modified': _date(modified),
+            'Expires': _date(expires),
+            'Cache-Control': 'max-age=604800',
+            'Content-Type': type,
+            'Date': _date(datetime.utcnow()),
+            'Server': SERVER,
+            'Accept-Ranges': 'bytes',
+            'ETag': etag
         }
 
         do304 = False
@@ -1076,16 +1085,16 @@ class FileServer(object):
 
             elif os.path.isfile(full):
                 cls = 'document'
-                ext = p[p.rfind('.')+1:]
-                if ext in ('jpg','jpeg','png','gif','bmp'):
+                ext = p[p.rfind('.') + 1:]
+                if ext in ('jpg', 'jpeg', 'png', 'gif', 'bmp'):
                     cls = 'image'
-                elif ext in ('zip','gz','tar','7z','tgz'):
+                elif ext in ('zip', 'gz', 'tar', '7z', 'tgz'):
                     cls = 'zip'
-                elif ext in ('mp3','mpa','wma','wav','flac','mid','midi','raw',
-                        'mod','xm','aac','m4a','ogg','aiff','au','voc','m3u',
-                        'pls','asx'):
+                elif ext in ('mp3', 'mpa', 'wma', 'wav', 'flac', 'mid', 'midi',
+                             'raw', 'mod', 'xm', 'aac', 'm4a', 'ogg', 'aiff',
+                             'au', 'voc', 'm3u', 'pls', 'asx'):
                     cls = 'audio'
-                elif ext in ('mpg','mpeg','mkv','mp4','wmv','avi','mov'):
+                elif ext in ('mpg', 'mpeg', 'mkv', 'mp4', 'wmv', 'avi', 'mov'):
                     cls = 'video'
                 link = p
                 size = _human_readable_size(stat.st_size)
@@ -1113,16 +1122,18 @@ class FileServer(object):
 
         return DIRECTORY_PAGE % (uri, uri, go_up, files, request.host, rtime), \
             200, {
-                'Content-Type':'text/html; charset=utf-8'
+                'Content-Type': 'text/html; charset=utf-8'
             }
 
 ###############################################################################
 # Private Helper Functions
 ###############################################################################
 
+
 def path(st):
     return st
 path.regex = "(.+?)"
+
 
 def _get_thing(thing):
     if thing in globals():
@@ -1134,6 +1145,8 @@ def _get_thing(thing):
     return None
 
 _route_parser = re.compile(r"<([^>]+)>([^<]*)")
+
+
 def _route_to_regex(route):
     """ Parse a Flask-style route and return a regular expression, as well as
         a tuple of things for conversion. """
@@ -1155,7 +1168,7 @@ def _route_to_regex(route):
 
     # If the parser doesn't match, return.
     if not _route_parser.match(route):
-        return regex+route, tuple(), tuple(), (regex+route)[1:-1]
+        return regex + route, tuple(), tuple(), (regex + route)[1:-1]
 
     for match in _route_parser.finditer(route):
         group = match.group(1)
@@ -1163,7 +1176,7 @@ def _route_to_regex(route):
             type, var = group.split(':', 1)
             thing = _get_thing(type)
             if not thing:
-                raise Exception, "Invalid type declaration, %s" % type
+                raise Exception("Invalid type declaration, %s" % type)
             if hasattr(thing, 'regex'):
                 regex += thing.regex
             elif thing in REGEXES:
@@ -1182,28 +1195,32 @@ def _route_to_regex(route):
     return regex, tuple(values), tuple(names), namegen[1:-1]
 
 _abbreviations = (
-    (1<<50L, u' PB'),
-    (1<<40L, u' TB'),
-    (1<<30L, u' GB'),
-    (1<<20L, u' MB'),
-    (1<<10L, u' KB'),
+    (1 << 50L, u' PB'),
+    (1 << 40L, u' TB'),
+    (1 << 30L, u' GB'),
+    (1 << 20L, u' MB'),
+    (1 << 10L, u' KB'),
     (1, u' B')
 )
+
+
 def _human_readable_size(size, precision=2):
     """ Convert a size to a human readable filesize. """
     if size == 0:
         return u'0 B'
 
-    for f,s in _abbreviations:
+    for f, s in _abbreviations:
         if size >= f:
             break
 
-    ip, dp = `size/float(f)`.split('.')
+    ip, dp = repr(size / float(f)).split('.')
     if int(dp[:precision]):
-        return  u'%s.%s%s' % (ip,dp[:precision],s)
-    return u'%s%s' % (ip,s)
+        return  u'%s.%s%s' % (ip, dp[:precision], s)
+    return u'%s%s' % (ip, s)
 
-_encodings = ('utf-8','iso-8859-1','cp1252','latin1')
+_encodings = ('utf-8', 'iso-8859-1', 'cp1252', 'latin1')
+
+
 def _decode(text):
     for enc in _encodings:
         try:
@@ -1211,7 +1228,8 @@ def _decode(text):
         except UnicodeDecodeError:
             continue
     else:
-        return text.decode('utf-8','ignore')
+        return text.decode('utf-8', 'ignore')
+
 
 def _parse_date(text):
     return datetime(*time.strptime(text, "%a, %d %b %Y %H:%M:%S GMT")[:6])
@@ -1220,11 +1238,13 @@ def _parse_date(text):
 # Public Helper Functions
 ###############################################################################
 
+
 def abort(status=404, message=None, headers=None):
     """
     Raise an HTTPException to display an error page.
     """
     raise HTTPException(status, message, headers)
+
 
 def all_or_404(*args):
     """
@@ -1233,6 +1253,7 @@ def all_or_404(*args):
     route decorator.
     """
     all(args) or abort()
+
 
 def error(message=None, status=None, headers=None, request=None, debug=None):
     """
@@ -1284,10 +1305,12 @@ def error(message=None, status=None, headers=None, request=None, debug=None):
     else:
         time = u''
 
-    result = ERROR_PAGE % (status, title, status, title.replace(u' ',u'&nbsp;'),
-        haiku, message, request.host, time)
+    result = ERROR_PAGE % (status, title, status,
+                           title.replace(u' ', u'&nbsp;'), haiku, message,
+                           request.host, time)
 
     return result, status, headers
+
 
 def json_response(object, status=200, headers=None):
     """
@@ -1308,6 +1331,7 @@ def json_response(object, status=200, headers=None):
 
     return json.dumps(object), status, headers
 
+
 def jsonify(*args, **kwargs):
     """
     Construct a JSON response using the provided arguments or keyword
@@ -1322,7 +1346,8 @@ def jsonify(*args, **kwargs):
         if kwargs:
             args = list(args) + [kwargs]
         kwargs = args
-    return json.dumps(kwargs), 200, {'Content-Type':'application/json'}
+    return json.dumps(kwargs), 200, {'Content-Type': 'application/json'}
+
 
 def redirect(uri, status=302):
     """
@@ -1336,7 +1361,8 @@ def redirect(uri, status=302):
 
     return error(
         'The document you have requested is located at <a href="%s">%s</a>.' % (
-            uri, uri), status, {'Location':url})
+            uri, uri), status, {'Location': url})
+
 
 def url_for(name, **values):
     """
@@ -1357,7 +1383,7 @@ def url_for(name, **values):
         # Find it in the first possible place.
         name = name[1:]
         for n in app._names:
-            module, nm = n.split('.',1)
+            module, nm = n.split('.', 1)
             if nm == name:
                 name = n
                 break
