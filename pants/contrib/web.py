@@ -21,6 +21,7 @@
 ###############################################################################
 
 import base64
+from datetime import datetime, timedelta
 import inspect
 import logging
 import mimetypes
@@ -30,22 +31,22 @@ import time
 import traceback
 import urllib
 
-from datetime import datetime, timedelta
-from pants import __version__ as pants_version
-from http import CRLF, HTTP, HTTPServer, HTTPRequest, SERVER, SERVER_URL, _date
-
 try:
     import simplejson as json
 except ImportError:
     import json
 
-__all__ = ('Application','HTTPException','HTTPTransparentRedirect','abort',
-    'all_or_404','error','json_response','jsonify','redirect','url_for',
-    'HTTPServer','FileServer')
+from http import HTTP, HTTPServer, SERVER, SERVER_URL, _date
+
+
+__all__ = ('Application', 'HTTPException', 'HTTPTransparentRedirect', 'abort',
+    'all_or_404', 'error', 'json_response', 'jsonify', 'redirect', 'url_for',
+    'HTTPServer', 'FileServer')
 
 ###############################################################################
 # Cross Platform Hidden File Detection
 ###############################################################################
+
 
 def _is_hidden(file, path):
     return file.startswith(u'.')
@@ -53,19 +54,21 @@ def _is_hidden(file, path):
 if os.name == 'nt':
     try:
         import win32api, win32con
+
         def _is_hidden(file, path):
             if file.startswith(u'.'):
                 return True
             file = os.path.join(path, file)
             try:
-                if win32api.GetFileAttributes(file) & win32con.FILE_ATTRIBUTE_HIDDEN:
+                attrs = win32api.GetFileAttributes(file)
+                if attrs & win32con.FILE_ATTRIBUTE_HIDDEN:
                     return True
             except Exception:
                 return True
             return False
     except ImportError:
         pass
-    
+
 ###############################################################################
 # Logging
 ###############################################################################
@@ -80,31 +83,31 @@ HAIKUS = {
     400: u'Something you entered<br>'
          u'transcended parameters.<br>'
          u'So much is unknown.',
-    
+
     401: u'To access this page,<br>'
          u'one must know oneself; but then:<br>'
          u'inform the server.',
-    
+
     403: u'Unfortunately,<br>'
          u'permissions insufficient.<br>'
          u'This, you cannot see.',
-    
+
     404: u'You step in the stream,<br>'
          u'But the water has moved on.<br>'
          u'This page is not here.',
-    
+
     410: u'A file that big?<br>'
          u'It might be very useful.<br>'
          u'But now it is Gone.',
-    
+
     413: u'Out of memory.<br>'
          u'We wish to hold the whole sky,<br>'
          u'But we never will.',
-    
+
     418: u'You requested coffee,<br>'
          u'it is neither short nor stout.<br>'
          u'I am a teapot.',
-    
+
     500: u'Chaos reigns within.<br>'
          u'Reflect, repent, and reboot.<br>'
          u'Order shall return.'
@@ -138,10 +141,10 @@ IMAGES['icon'] = base64.b64decode(IMAGES['icon'])
 
 PAGE_CSS = u"""html, body { margin: 0; padding: 0; min-height: 100%%; }
 body {
-	font-family: Calibri,"Arial","Helvetica",sans-serif;
-	background: #EEE;
-	background-image: -webkit-gradient( linear, left bottom, left top,
-		color-stop(0, #ccc), color-stop(0.5, #eee) );
+    font-family: Calibri,"Arial","Helvetica",sans-serif;
+    background: #EEE;
+    background-image: -webkit-gradient( linear, left bottom, left top,
+        color-stop(0, #ccc), color-stop(0.5, #eee) );
     background-image: -moz-linear-gradient( center bottom, #ccc 0%%, #eee 50%% );
 }
 
@@ -160,12 +163,12 @@ table.dir td,table.dir th,.thingy > h1 { margin: 0; }
 p { margin-bottom: 0; }
 table.dir a,pre { display: block; }
 pre {
-	background: #ddd;
+    background: #ddd;
     background-color: rgba(199,199,199,0.5);
-	text-align: left;
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	padding: 5px;
+    text-align: left;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    padding: 5px;
 }
 
 table.dir { width:100%%; border-spacing: 0; }
@@ -195,14 +198,14 @@ a.audio { background-image: url("data:image/png;base64,%s"); }
 a.video { background-image: url("data:image/png;base64,%s"); }
 
 .thingy { background-color: #FFF; background-position: center; color: #000;
-	border: 5px #ddd solid;
-	-moz-border-radius: 25px;
-	border-radius: 25px;
-	padding: 50px;
-	margin: 0 50px;
+    border: 5px #ddd solid;
+    -moz-border-radius: 25px;
+    border-radius: 25px;
+    padding: 50px;
+    margin: 0 50px;
 }""" % (IMAGES['folder'], IMAGES['document'], IMAGES['image'], IMAGES['zip'],
     IMAGES['audio'], IMAGES['video'])
-PAGE_CSS = PAGE_CSS.replace('%','%%%%')
+PAGE_CSS = PAGE_CSS.replace('%', '%%%%')
 
 PAGE = u"""<!DOCTYPE html>
 <html><head><title>%%s</title><style>%s</style></head><body>
@@ -210,7 +213,7 @@ PAGE = u"""<!DOCTYPE html>
 %%s
 </div><div class="footer"><i><a href="%s">%s</a><br>%%%%s</i>
 <div class="debug">%%%%s</div></div>
-<div class="spacer"></div></div></body></html>""".replace('\n','') % (
+<div class="spacer"></div></div></body></html>""".replace('\n', '') % (
     PAGE_CSS, SERVER_URL, SERVER)
 
 DIRECTORY_PAGE = PAGE % (
@@ -228,13 +231,14 @@ ERROR_PAGE = PAGE % (
 
 # Regular expressions used for various types.
 REGEXES = {
-    int     : r'(-?\d+)',
-    float   : r'(-?\d+(?:\.\d+)?)',
+    int: r'(-?\d+)',
+    float: r'(-?\d+(?:\.\d+)?)',
 }
 
 ###############################################################################
 # Special Exceptions
 ###############################################################################
+
 
 class HTTPException(Exception):
     """
@@ -242,14 +246,14 @@ class HTTPException(Exception):
     an error page out to the client with the given
     `HTTP status code <http://en.wikipedia.org/wiki/List_of_HTTP_status_codes>`_,
     message, and any provided headers.
-    
+
     This is, generally, preferable to allowing an exception of a different
     type to bubble up to the Application, which would result in a
     ``500 Internal Server Error`` page.
-    
+
     The :func:`abort` helper function makes it easy to raise instances of
     this exception.
-    
+
     =========  ============
     Argument   Description
     =========  ============
@@ -263,6 +267,7 @@ class HTTPException(Exception):
         self.message = message
         self.headers = headers
 
+
 class HTTPTransparentRedirect(Exception):
     """
     Raising an instance of HTTPTransparentRedirect will cause the Application
@@ -275,28 +280,29 @@ class HTTPTransparentRedirect(Exception):
 # Application Class
 ###############################################################################
 
+
 class Application(object):
     """
     The Application class builds upon :class:`pants.contrib.http.HTTPServer`,
     adding support for request routing, additional error handling, and a
     degree of convenience that makes writing dynamic pages easier.
-    
+
     Instances of Application are callable, and may be used as a HTTPServer's
     request handler. For example::
-        
+
         from pants.contrib.http import HTTPServer
         from pants.contrib.web import Application
         from pants import engine
-        
+
         app = Application()
-        
+
         @app.route('/')
         def hello_world():
             return "Hiya, Everyone!"
-        
+
         HTTPServer(app).listen()
         engine.start()
-    
+
     ===============  ============
     Argument         Description
     ===============  ============
@@ -305,18 +311,18 @@ class Application(object):
     ===============  ============
     """
     current_app = None
-    
+
     def __init__(self, default_domain=None, debug=False):
         # Internal Stuff
-        self._routes    = {}
-        self._names     = {}
-        
+        self._routes = {}
+        self._names = {}
+
         self._routes[None] = {}
-        
+
         # External Stuff
         self.default_domain = None
         self.debug = debug
-    
+
     def run(self, port=None, host='', ssl_options=None):
         """
         This function exists for convenience, and when called creates an
@@ -324,18 +330,18 @@ class Application(object):
         handler set to this application instance, calls
         :func:`pants.contrib.http.HTTPServer.listen` on that HTTPServer, and
         finally, starts the Pants engine to process requests.
-        
+
         Example::
-            
+
             from pants.contrib.web import *
             app = Application()
-            
+
             @app.route('/')
             def hello_world():
                 return "Hiya, Everyone!"
-            
+
             app.run()
-        
+
         ============  ============
         Argument      Description
         ============  ============
@@ -347,32 +353,32 @@ class Application(object):
         from pants import engine
         HTTPServer(self, ssl_options=ssl_options).listen(port, host)
         engine.start()
-    
+
     ##### Route Management Methods ############################################
-    
-    def basic_route(self, rule, name=None, methods=['GET','HEAD']):
+
+    def basic_route(self, rule, name=None, methods=['GET', 'HEAD']):
         """
         The basic_route decorator registers a route with the Application without
         holding your hand over it.
-        
+
         It functions almost the same as the :func:`Application.route` decorator,
         but doesn't wrap the provided function with any argument handling code.
         Instead, you're provided with the request object and the the regex
         match object.
-        
+
         Example Usage::
-            
+
             @app.basic_route("/char/<char>")
             def my_route(request):
                 char, = request.match.groups()
                 return 'The character is %s!' % char
-        
+
         That is, essentially, equivilent to:
-            
+
             @app.route("/char/<char>/")
             def my_route(char):
                 return 'The character is %s!' % char
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -387,26 +393,26 @@ class Application(object):
                 rule = '/' + rule
             else:
                 domain = None
-            
+
             regex, arguments, names, namegen = _route_to_regex(rule)
             _regex = re.compile(regex)
-            
+
             if name is None:
                 name = "%s.%s" % (func.__module__, func.__name__)
-            
+
             self._insert_route(_regex, func, domain, name, methods, names, namegen)
             return func
         return decorator
-    
-    def route(self, rule, name=None, methods=['GET','HEAD'], auto404=False):
+
+    def route(self, rule, name=None, methods=['GET', 'HEAD'], auto404=False):
         """
         The route decorator is used to register a new request handler with the
         Application instance. Example::
-            
+
             @app.route("/")
             def hello_world():
                 return "Hiya, Everyone!"
-        
+
         Variables may be specified in the route *rule* by wrapping them with
         inequality signs (for example: ``<variable_name>``). By default, a
         variable part accepts any character except a slash (``/``) and returns
@@ -415,51 +421,51 @@ class Application(object):
         callable in the pants.contrib.web namespace that accepts a single
         string as its argument, and returns a value. Built-in types, such as
         int and float, work well for this. Example::
-            
+
             @app.route("/user/<int:id>/")
             def user(id):
                 # Code Here
-        
+
         The ``id`` is automatically converted into an integer for you, and as
         an added bonus, your function is never even called if the provided
         value for ``id`` isn't a valid number.
-        
+
         Request handlers are easy to write and can send their output to the
         client simply by returning a value, such as a string::
-            
+
             @app.route("/")
             def hello_world():
                 return "Hiya, Everyone!"
-        
+
         The previous code would result in a `200 OK`` response, with a
         ``Content-Type`` header of ``text/plain``, and a ``Content-Length``
         header of ``15``. With, of course, the body ``Hiya, Everyone!``.
-        
+
         If the returned string begins with ``<!DOCTYPE`` or ``<html``, it will
         be assumed that the response is of ``Content-Type: text/html``.
-        
+
         If a unicode object is returned, rather than a simple string, it will
         be automatically encoded and an encoding argument will be added to the
         ``Content-Type`` header.
-        
+
         If a non-string object is returned, it will be converted to a string
         via ``str()`` before any content headers are set. The exception to this
         is that, if the object has a ``__html__`` method, that method will be
         called rather than ``str()``, and the ``Content-Type`` will be
         automatically assumed to be ``text/html``, regardless of the actual
         content of the string.
-        
+
         A tuple of ``(body, status)`` or ``(body, status, headers)`` may be
         returned, rather than simply a body, to set the HTTP status code of
         the result and additional response headers. If provided, ``status``
         must be an integer, and ``headers`` must be a dict.
-        
+
         The following example returns a page with the status code ``404 Not Found``::
-            
+
             @app.route("/nowhere")
             def nowhere():
                 return "This does not exist.", 404
-        
+
         =========  ============
         Argument   Description
         =========  ============
@@ -472,25 +478,25 @@ class Application(object):
         if callable(name):
             self._add_route(rule, name, None, methods, auto404)
             return
-        
+
         def decorator(func):
             self._add_route(rule, func, name, methods, auto404)
             return func
         return decorator
-    
+
     ##### Error Handlers ######################################################
-    
+
     def handle_404(self, request, exception):
         if isinstance(exception, HTTPException):
             return error(exception.message, 404)
         return error(404)
-    
+
     def handle_500(self, request, exception):
         log.exception('Error handling HTTP request: %s %%s' % request.method,
-            request.uri) #, traceback.format_exc())
+            request.uri)
         if not self.debug:
             return error(500)
-        
+
         resp = u''.join([
             u"<h2>Traceback</h2>\n",
             u"<pre>%s</pre>\n" % traceback.format_exc(),
@@ -501,11 +507,11 @@ class Application(object):
             u"<h2>HTTP Request</h2>\n",
             request.__html__(),
             ])
-        
+
         return error(resp, 500)
-    
+
     ##### The Request Handler #################################################
-    
+
     def __call__(self, request):
         """
         This function is called when a new request is received, and calls both
@@ -514,27 +520,27 @@ class Application(object):
         """
         Application.current_app = self
         self.request = request
-        
+
         try:
             request.auto_finish = True
             self.handle_output(self.handle_request(request))
         finally:
             request.route = None
             request.match = None
-            
+
             Application.current_app = None
             self.request = None
-    
+
     def handle_output(self, result):
         """ Process the output of handle_request. """
         request = self.request
-        
+
         if not request.auto_finish or result is None or \
                 request._finish is not None:
             if request.auto_finish and request._finish is None:
                 request.finish()
             return
-        
+
         status = 200
         if type(result) is tuple:
             if len(result) == 3:
@@ -545,22 +551,22 @@ class Application(object):
         else:
             body = result
             headers = {}
-        
+
         # Set a Content-Type header if there isn't already one.
         if not 'Content-Type' in headers:
-            if (isinstance(body, basestring) and 
-                    body[:5].lower() in ('<html','<!doc')) or \
+            if (isinstance(body, basestring) and
+                    body[:5].lower() in ('<html', '<!doc')) or \
                     hasattr(body, '__html__'):
                 headers['Content-Type'] = 'text/html'
             else:
                 headers['Content-Type'] = 'text/plain'
-        
+
         # Convert the body to something sendable.
         try:
             body = body.__html__()
         except AttributeError:
             pass
-        
+
         if isinstance(body, unicode):
             encoding = headers['Content-Type']
             if 'charset=' in encoding:
@@ -569,34 +575,34 @@ class Application(object):
                 before = encoding
                 sep = '; charset='
                 enc = 'UTF-8'
-            
+
             body = body.encode(enc)
             headers['Content-Type'] = '%s%s%s' % (before, sep, enc)
-        
+
         elif not isinstance(body, str):
             body = str(body)
-        
+
         # More headers!
         headers['Content-Length'] = len(body)
         if not 'Date' in headers:
             headers['Date'] = _date(datetime.utcnow())
         if not 'Server' in headers:
             headers['Server'] = SERVER
-        
+
         # Send the response.
         request.send_status(status)
         request.send_headers(headers)
-        
+
         if request.method == 'HEAD':
             request.finish()
             return
-        
+
         request.write(body)
         request.finish()
-    
+
     def handle_request(self, request):
         path = request.path
-        
+
         # Domain Matching
         if len(self._routes) == 1:
             domain = None
@@ -611,16 +617,16 @@ class Application(object):
                         domain = '.' + domain.partition('.')[2]
                 if not domain in self._routes:
                     domain = self.default_domain
-        
+
         for route in self._routes[domain]:
             match = route.match(path)
             if match is None:
                 continue
-            
+
             # Process this route.
             request.route = route
             request.match = match
-            
+
             func, name, methods = self._routes[domain][route][:3]
             if request.method not in methods:
                 return error(
@@ -650,14 +656,14 @@ class Application(object):
                 for route in self._routes[domain]:
                     if route.match(p):
                         if request.query:
-                            return redirect('%s?%s' % (p,request.query))
+                            return redirect('%s?%s' % (p, request.query))
                         else:
                             return redirect(p)
-        
+
         return self.handle_404(request, None)
-    
+
     ##### Internal Methods and Event Handlers #################################
-    
+
     def _insert_route(self, route, handler, domain, name, methods, nms, namegen):
         if isinstance(route, basestring):
             route = re.compile(route)
@@ -665,8 +671,8 @@ class Application(object):
             self._routes[domain] = {}
         self._routes[domain][route] = (handler, name, methods, nms, namegen)
         self._names[name] = route
-    
-    def _add_route(self, route, view, name=None, methods=['GET','HEAD'],
+
+    def _add_route(self, route, view, name=None, methods=['GET', 'HEAD'],
             auto404=False):
         """ See: Application.route """
         if name is None:
@@ -678,28 +684,28 @@ class Application(object):
                 name = view.__class__.__name__
             else:
                 raise NameError("Cannot find name for this route.")
-        
+
         if not callable(view):
             raise Exception('View must be callable.')
-        
+
         # Parse the route.
         if route[0] != '/':
             domain, _, route = route.partition('/')
             route = '/' + route
         else:
             domain = None
-        
+
         regex, arguments, names, namegen = _route_to_regex(route)
         _regex = re.compile(regex)
-        
+
         if not arguments:
             arguments = False
-        
+
         try:
             args = inspect.getargspec(view).args
         except TypeError:
             args = inspect.getargspec(view.__call__).args[1:]
-        
+
         if len(args) == 1 and args[0] == 'request':
             def view_runner(request):
                 request.__viewmodule__ = view.__module__
@@ -707,24 +713,25 @@ class Application(object):
                 try:
                     if arguments is False:
                         return view(request)
-                    
+
                     out = []
-                    for val,type in zip(match.groups(), arguments):
+                    for val, type in zip(match.groups(), arguments):
                         if type is not None:
                             try:
                                 val = type(val)
                             except Exception:
-                                return error('Unable to parse data %r.' % val, 400)
+                                return error('Unable to parse data %r.' % val,
+                                             400)
                         out.append(val)
-                    
+
                     if auto404 is True:
                         all_or_404(*out)
-                    
+
                     request.arguments = out
                     return view(request)
                 finally:
                     request.arguments = None
-        
+
         else:
             def view_runner(request):
                 request.__viewmodule__ = view.__module__
@@ -736,74 +743,75 @@ class Application(object):
                         view.__call__.func_globals['request'] = request
                     if arguments is False:
                         return view()
-                    
+
                     out = []
-                    for val,type in zip(match.groups(), arguments):
+                    for val, type in zip(match.groups(), arguments):
                         if type is not None:
                             try:
                                 val = type(val)
                             except Exception:
                                 return error('Unable to parse data %r.' % val, 400)
                         out.append(val)
-                    
+
                     if auto404 is True:
                         all_or_404(*out)
-                    
+
                     return view(*out)
                 finally:
                     try:
                         view.func_globals['request'] = None
                     except AttributeError:
                         view.__call__.func_globals['request'] = None
-        
+
         view_runner.__name__ = name
         self._insert_route(_regex, view_runner, domain,
-            "%s.%s" %(view.__module__,name), methods, names, namegen)
+            "%s.%s" % (view.__module__, name), methods, names, namegen)
 
 ###############################################################################
 # FileServer Class
 ###############################################################################
+
 
 class FileServer(object):
     """
     The FileServer is a request handling class that, as it sounds, serves files
     to the client. It also supports the Content-Range header, HEAD requests,
     and last modified dates.
-    
+
     It attempts to serve the files as efficiently as possible.
-    
+
     Using it is simple. It only requires a single argument: the path to serve
     files from. You can also supply a list of default files to check to serve
     rather than a file listing.
-    
+
     When used with an Application, the FileServer is not created in the usual
     way with the route decorator, but rather with a method of the FileServer
     itself. Example:
-        
+
         FileServer("/tmp/path").attach(app)
-    
+
     If you wish to listen on a path other than /static/, you can also use that
     when attaching:
-        
+
         FileServer("/tmp/path").attach(app, "/files/")
     """
     def __init__(self, path, blacklist=[re.compile('.*\.pyc?$')],
-            defaults=['index.html','index.html'],
+            defaults=['index.html', 'index.html'],
             renderers=None):
         """
         Initialize the FileServer.
-        
+
         Args:
             path: The path to serve.
             blacklist: A list of regular expressions to test filenames against.
                 If any match a given file, it will not be downloadable via
                 this class. Optional.
-                
+
                 Any blacklist items are expected to be either a regex pattern
                 object, a unicode string, or a regular string. In the event
                 of a regular string, it will be compiled into a regex pattern
                 object.
-                
+
                 By default, all .py and .pyc files are blacklisted.
             defaults: A list of default files, such as index.html. Optional.
             renderers: A dictionary of methods for rendering files into
@@ -814,35 +822,36 @@ class FileServer(object):
         # Make sure our path is unicode.
         if not isinstance(path, unicode):
             path = _decode(path)
-        
+
         self.path = os.path.normpath(os.path.realpath(path))
         self.defaults = defaults
         self.renderers = renderers or {}
-        
+
         # Build the blacklist.
         self.blacklist = []
         for bl in blacklist:
             if isinstance(bl, str):
                 bl = re.compile(bl)
             self.blacklist.append(bl)
-    
+
     def attach(self, app, route='/static/', domain=None):
         """
         Attach this fileserver to an application, bypassing the usual route
         decorator to ensure things are done right.
-        
+
         Args:
             app: The application to attach to.
             route: The path to listen on. Defaults to '/static/'.
         """
         route = re.compile("^%s(.*)$" % re.escape(route))
-        app._insert_route(route, self, domain, "FileServer", ['HEAD','GET'], None, None)
-    
+        app._insert_route(route, self, domain, "FileServer", ['HEAD', 'GET'],
+                          None, None)
+
     def check_blacklist(self, path):
         """
         Check the given path to make sure it isn't blacklisted. If it is
         blacklisted, then raise an HTTPException via abort.
-        
+
         Args:
             path: The path to check.
         """
@@ -852,29 +861,29 @@ class FileServer(object):
                     abort(403)
             elif bl.match(path):
                 abort(403)
-    
+
     def __call__(self, request):
         """
         Serve a request.
         """
-        
+
         try:
             path = request.match.group(1)
         except (AttributeError, IndexError):
             path = request.path
-        
+
         # Conver the path to unicode.
         path = _decode(urllib.unquote(path))
-        
+
         # Normalize the path.
         full_path = os.path.normpath(os.path.join(self.path, path))
-        
+
         # Validate the request.
         if not full_path.startswith(self.path):
             abort(403)
         if not os.path.exists(full_path):
             abort(404)
-        
+
         # Is this a directory?
         if os.path.isdir(full_path):
             # Check defaults.
@@ -885,13 +894,13 @@ class FileServer(object):
                     if hasattr(request, 'match'):
                         del request.match
                     return self.__call__(request)
-            
+
             # Guess not. List it.
             return self.list_directory(request, path)
-        
+
         # Blacklist Checking.
         self.check_blacklist(full_path)
-        
+
         # Try rendering the content.
         ext = os.path.basename(full_path).rpartition('.')[-1]
         if ext in self.renderers:
@@ -903,30 +912,30 @@ class FileServer(object):
             mtime = stat.st_mtime
             size = stat.st_size
             type = mimetypes.guess_type(full_path)[0]
-        
+
         # If we don't have a type, text/plain it.
         if type is None:
             type = 'text/plain'
-        
+
         # Generate a bunch of data for headers.
         modified = datetime.fromtimestamp(mtime)
         expires = datetime.utcnow() + timedelta(days=7)
-        
+
         etag = '"%x-%x"' % (size, int(mtime))
-        
+
         headers = {
-            'Last-Modified' : _date(modified),
-            'Expires'       : _date(expires),
-            'Cache-Control' : 'max-age=604800',
-            'Content-Type'  : type,
-            'Date'          : _date(datetime.utcnow()),
-            'Server'        : SERVER,
-            'Accept-Ranges' : 'bytes',
-            'ETag'          : etag    
+            'Last-Modified': _date(modified),
+            'Expires': _date(expires),
+            'Cache-Control': 'max-age=604800',
+            'Content-Type': type,
+            'Date': _date(datetime.utcnow()),
+            'Server': SERVER,
+            'Accept-Ranges': 'bytes',
+            'ETag': etag
         }
-        
+
         do304 = False
-        
+
         if 'If-Modified-Since' in request.headers:
             try:
                 since = _parse_date(request.headers['If-Modified-Since'])
@@ -934,11 +943,11 @@ class FileServer(object):
                 since = None
             if since and since >= modified:
                 do304 = True
-        
+
         if 'If-None-Match' in request.headers:
             if etag == request.headers['If-None-Match']:
                 do304 = True
-        
+
         if do304:
             if f:
                 f.close()
@@ -947,16 +956,16 @@ class FileServer(object):
             request.send_headers(headers)
             request.finish()
             return
-        
+
         if 'If-Range' in request.headers:
             if etag != request.headers['If-Range'] and \
                     'Range' in request.headers:
                 del request.headers['Range']
-        
+
         last = size - 1
         range = 0, last
         status = 200
-        
+
         if 'Range' in request.headers:
             if request.headers['Range'].startswith('bytes='):
                 try:
@@ -973,7 +982,7 @@ class FileServer(object):
                     else:
                         start = int(start or 0)
                         end = int(end or last)
-                    
+
                     if start < 0 or start > end or end > last:
                         if f:
                             f.close()
@@ -985,74 +994,74 @@ class FileServer(object):
                     status = 206
                     headers['Content-Range'] = 'bytes %d-%d/%d' % (
                         range[0], range[1], size)
-        
+
         # Set the content length header.
         if range[0] == range[1]:
             headers['Content-Length'] = 0
         else:
             headers['Content-Length'] = 1 + (range[1] - range[0])
-        
+
         # Send the headers and status line.
         request.auto_finish = False
         request.send_status(status)
         request.send_headers(headers)
-        
+
         # Don't send the body if this is head.
         if request.method == 'HEAD':
             if f:
                 f.close()
             request.finish()
             return
-        
+
         # Open the file and send it.
         if range[0] == range[1]:
             if f:
                 f.close()
             request.finish()
             return
-        
+
         if f is None:
             f = open(full_path, 'rb')
-        
+
         if range[1] != last:
             length = 1 + (range[1] - range[0])
         else:
             length = 0
-        
+
         def on_write():
             del request.connection.handle_write_file
             request.finish()
-        
+
         request.connection.handle_write_file = on_write
         request.connection.write_file(f, nbytes=length, offset=range[0])
-        
+
     def list_directory(self, request, path):
         """
         Generate a directory listing and return it.
         """
-        
+
         # Normalize the path.
         full_path = os.path.normpath(os.path.join(self.path, path))
-        
+
         # Get the URI, which is just request.path decoded.
         uri = _decode(urllib.unquote(request.path))
         if not uri.startswith(u'/'):
             uri = u'/%s' % uri
         if not uri.endswith(u'/'):
             return redirect(u'%s/' % uri)
-        
+
         go_up = u''
         url = uri.strip(u'/')
         if url:
             go_up = u'<p><a href="..">Up to Higher Directory</a></p>'
-        
+
         files = []
         dirs = []
-        
+
         for p in sorted(os.listdir(full_path), key=unicode.lower):
             if _is_hidden(p, full_path):
                 continue
-            
+
             full = os.path.join(full_path, p)
             try:
                 fp = full
@@ -1061,68 +1070,70 @@ class FileServer(object):
                 self.check_blacklist(fp)
             except HTTPException:
                 continue
-            
+
             stat = os.stat(full)
             mtime = datetime.fromtimestamp(stat.st_mtime).strftime(
                 u'<td class="right">%Y-%m-%d</td>'
                 u'<td class="left">%I:%M:%S %p</td>'
                 )
-            
+
             if os.path.isdir(full):
                 cls = u'folder'
                 link = u'%s/' % p
                 size = u'<span class="faint">Directory</span>'
                 obj = dirs
-            
+
             elif os.path.isfile(full):
                 cls = 'document'
-                ext = p[p.rfind('.')+1:]
-                if ext in ('jpg','jpeg','png','gif','bmp'):
+                ext = p[p.rfind('.') + 1:]
+                if ext in ('jpg', 'jpeg', 'png', 'gif', 'bmp'):
                     cls = 'image'
-                elif ext in ('zip','gz','tar','7z','tgz'):
+                elif ext in ('zip', 'gz', 'tar', '7z', 'tgz'):
                     cls = 'zip'
-                elif ext in ('mp3','mpa','wma','wav','flac','mid','midi','raw',
-                        'mod','xm','aac','m4a','ogg','aiff','au','voc','m3u',
-                        'pls','asx'):
+                elif ext in ('mp3', 'mpa', 'wma', 'wav', 'flac', 'mid', 'midi',
+                             'raw', 'mod', 'xm', 'aac', 'm4a', 'ogg', 'aiff',
+                             'au', 'voc', 'm3u', 'pls', 'asx'):
                     cls = 'audio'
-                elif ext in ('mpg','mpeg','mkv','mp4','wmv','avi','mov'):
+                elif ext in ('mpg', 'mpeg', 'mkv', 'mp4', 'wmv', 'avi', 'mov'):
                     cls = 'video'
                 link = p
                 size = _human_readable_size(stat.st_size)
                 obj = files
-            
+
             else:
                 continue
-            
+
             obj.append(
                 u'<tr><td><a class="icon %s" href="%s%s">%s</a></td><td>%s'
                 u'</td>%s</tr>' % (
                     cls, uri, link, p, size, mtime))
-        
+
         if files or dirs:
             files = u''.join(dirs) + u''.join(files)
         else:
             files = (u'<tr><td colspan="4" class="noborder">'
                      u'<div class="footer center">'
                      u'This directory is empty.</div></td></tr>')
-        
+
         if Application.current_app and Application.current_app.debug:
             rtime = u'%0.3f ms' % (1000 * request.time)
         else:
             rtime = u''
-        
+
         return DIRECTORY_PAGE % (uri, uri, go_up, files, request.host, rtime), \
             200, {
-                'Content-Type':'text/html; charset=utf-8'
+                'Content-Type': 'text/html; charset=utf-8'
             }
-    
+
 ###############################################################################
 # Private Helper Functions
 ###############################################################################
 
+
 def path(st):
     return st
 path.regex = "(.+?)"
+
 
 def _get_thing(thing):
     if thing in globals():
@@ -1134,6 +1145,8 @@ def _get_thing(thing):
     return None
 
 _route_parser = re.compile(r"<([^>]+)>([^<]*)")
+
+
 def _route_to_regex(route):
     """ Parse a Flask-style route and return a regular expression, as well as
         a tuple of things for conversion. """
@@ -1143,7 +1156,7 @@ def _route_to_regex(route):
             route = "^%s$" % route
         else:
             route = "^/%s$" % route
-    
+
     # Find up to the first < and add it to regex.
     ind = route.find('<')
     if ind is -1:
@@ -1152,18 +1165,18 @@ def _route_to_regex(route):
         regex += route[:ind]
         namegen += route[:ind]
         route = route[ind:]
-    
+
     # If the parser doesn't match, return.
     if not _route_parser.match(route):
-        return regex+route, tuple(), tuple(), (regex+route)[1:-1]
-    
+        return regex + route, tuple(), tuple(), (regex + route)[1:-1]
+
     for match in _route_parser.finditer(route):
         group = match.group(1)
         if ':' in group:
             type, var = group.split(':', 1)
             thing = _get_thing(type)
             if not thing:
-                raise Exception, "Invalid type declaration, %s" % type
+                raise Exception("Invalid type declaration, %s" % type)
             if hasattr(thing, 'regex'):
                 regex += thing.regex
             elif thing in REGEXES:
@@ -1178,32 +1191,36 @@ def _route_to_regex(route):
             names.append(group)
         namegen += "%s" + match.group(2)
         regex += match.group(2)
-    
+
     return regex, tuple(values), tuple(names), namegen[1:-1]
 
 _abbreviations = (
-    (1<<50L, u' PB'),
-    (1<<40L, u' TB'),
-    (1<<30L, u' GB'),
-    (1<<20L, u' MB'),
-    (1<<10L, u' KB'),
+    (1 << 50L, u' PB'),
+    (1 << 40L, u' TB'),
+    (1 << 30L, u' GB'),
+    (1 << 20L, u' MB'),
+    (1 << 10L, u' KB'),
     (1, u' B')
 )
+
+
 def _human_readable_size(size, precision=2):
     """ Convert a size to a human readable filesize. """
     if size == 0:
         return u'0 B'
-    
-    for f,s in _abbreviations:
+
+    for f, s in _abbreviations:
         if size >= f:
             break
-    
-    ip, dp = `size/float(f)`.split('.')
-    if int(dp[:precision]):
-        return  u'%s.%s%s' % (ip,dp[:precision],s)
-    return u'%s%s' % (ip,s)
 
-_encodings = ('utf-8','iso-8859-1','cp1252','latin1')
+    ip, dp = repr(size / float(f)).split('.')
+    if int(dp[:precision]):
+        return  u'%s.%s%s' % (ip, dp[:precision], s)
+    return u'%s%s' % (ip, s)
+
+_encodings = ('utf-8', 'iso-8859-1', 'cp1252', 'latin1')
+
+
 def _decode(text):
     for enc in _encodings:
         try:
@@ -1211,7 +1228,8 @@ def _decode(text):
         except UnicodeDecodeError:
             continue
     else:
-        return text.decode('utf-8','ignore')
+        return text.decode('utf-8', 'ignore')
+
 
 def _parse_date(text):
     return datetime(*time.strptime(text, "%a, %d %b %Y %H:%M:%S GMT")[:6])
@@ -1220,11 +1238,13 @@ def _parse_date(text):
 # Public Helper Functions
 ###############################################################################
 
+
 def abort(status=404, message=None, headers=None):
     """
     Raise an HTTPException to display an error page.
     """
     raise HTTPException(status, message, headers)
+
 
 def all_or_404(*args):
     """
@@ -1234,33 +1254,34 @@ def all_or_404(*args):
     """
     all(args) or abort()
 
+
 def error(message=None, status=None, headers=None, request=None, debug=None):
     """
     Return a very simple error page, defaulting to a 404 Not Found error if
     no status code is supplied. Usually, you'll want to call abort() in your
     code, rather than error, to streamline the process of abandoning your code.
     Usage:
-        
+
         return error(404)
         return error("Some message.", 404)
         return error("Blah blah blah.", 403, {'Some-Header':'Fish'})
     """
     if request is None:
         request = Application.current_app.request
-    
+
     if status is None:
         if type(message) is int:
             status = message
             message = None
         else:
             status = 404
-    
+
     if not status in HTTP:
         status = 404
     title = HTTP[status]
     if not headers:
         headers = {}
-    
+
     if message is None:
         if status in HTTP_MESSAGES:
             dict = request.__dict__.copy()
@@ -1268,34 +1289,36 @@ def error(message=None, status=None, headers=None, request=None, debug=None):
             message = HTTP_MESSAGES[status] % dict
         else:
             message = u"An unspecified error has occured."
-    
+
     haiku = u''
     if status in HAIKUS:
         haiku = u'<div class="haiku">%s</div>' % HAIKUS[status]
-    
+
     if not message.startswith(u'<'):
         message = u'<p>%s</p>' % message
-    
+
     if debug is None:
         debug = Application.current_app and Application.current_app.debug
-    
+
     if debug:
         time = u'%0.3f ms' % (1000 * request.time)
     else:
         time = u''
-    
-    result = ERROR_PAGE % (status, title, status, title.replace(u' ',u'&nbsp;'),
-        haiku, message, request.host, time)
-    
+
+    result = ERROR_PAGE % (status, title, status,
+                           title.replace(u' ', u'&nbsp;'), haiku, message,
+                           request.host, time)
+
     return result, status, headers
+
 
 def json_response(object, status=200, headers=None):
     """
     Constructs a JSON response from a given object. You can also specify a
     HTTP status code and additional headers. Example:
-        
+
         return json_response(["my","object","here"])
-    
+
     Args:
         object: The object to return.
         status: The HTTP status code to send. Defaults to 200.
@@ -1305,15 +1328,16 @@ def json_response(object, status=200, headers=None):
         headers = {}
     if not 'Content-Type' in headers:
         headers['Content-Type'] = 'application/json'
-    
+
     return json.dumps(object), status, headers
+
 
 def jsonify(*args, **kwargs):
     """
     Construct a JSON response using the provided arguments or keyword
     arguments. Somewhat less powerful than json_response, but providing a
     simple interface. Example:
-        
+
         return jsonify(username="Stacy",
                        email="stacy@examples.com",
                        id=2)
@@ -1322,7 +1346,8 @@ def jsonify(*args, **kwargs):
         if kwargs:
             args = list(args) + [kwargs]
         kwargs = args
-    return json.dumps(kwargs), 200, {'Content-Type':'application/json'}
+    return json.dumps(kwargs), 200, {'Content-Type': 'application/json'}
+
 
 def redirect(uri, status=302):
     """
@@ -1333,62 +1358,63 @@ def redirect(uri, status=302):
     url = uri
     if isinstance(url, unicode):
         url = uri.encode('utf-8')
-    
+
     return error(
         'The document you have requested is located at <a href="%s">%s</a>.' % (
-            uri, uri), status, {'Location':url})
+            uri, uri), status, {'Location': url})
+
 
 def url_for(name, **values):
     """
     Generates a URL to the route with the given name. The name is relative to
     the module of the route function. Examples:
-    
+
     View's Module | Target Endpoint | Target Function
     'test'        | 'index'         | 'index' function of 'test' module
     'test'        | '.who'          | First 'who' function of any module
     'test'        | 'admin.login'   | 'login' function of 'admin' module
-    
+
     Provided values with unknown keys are added to the URL as query arugments.
     """
     app = Application.current_app
     request = app.request
-    
+
     if name.startswith('.'):
         # Find it in the first possible place.
         name = name[1:]
         for n in app._names:
-            module, nm = n.split('.',1)
+            module, nm = n.split('.', 1)
             if nm == name:
                 name = n
                 break
     elif not '.' in name:
         # Find it in this module.
         name = "%s.%s" % (request.__viewmodule__, name)
-    
+
     if not name in app._names:
         raise NameError("Cannot find route %r." % name)
-    
+
     route = app._names[name]
     names, namegen = app._routes[route][-2:]
-    
+
     out = []
     for n in names:
         out.append(str(values[n]))
         del values[n]
     out = tuple(out)
-    
+
     if len(out) == 1:
         out = namegen % out[0]
     else:
         out = namegen % out
     out = urllib.quote(out)
-    
+
     if '_external' in values:
         if values['_external']:
             out = '%s://%s%s' % (request.protocol, request.host, out)
         del values['_external']
-    
+
     if values:
         out += '?%s' % urllib.urlencode(values)
-    
+
     return out

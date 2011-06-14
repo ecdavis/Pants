@@ -33,6 +33,7 @@ except ImportError:
 # _Qt Class
 ###############################################################################
 
+
 class _Qt(object):
     """
     A QSocketNotifier-based polling object.
@@ -156,6 +157,7 @@ class _Qt(object):
 
 timer = None
 
+
 def install(app=None, timeout=0.02):
     """
     Sets up the timer. This isn't necessary if you're going to be calling
@@ -169,9 +171,9 @@ def install(app=None, timeout=0.02):
             the engine's poll function.
     """
     global timer
-    
+
     Engine.instance()._install_poller(_Qt())
-    
+
     if app is None:
         app = QCoreApplication.instance()
     if app is None:
