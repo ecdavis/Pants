@@ -22,7 +22,6 @@
 
 import cStringIO
 import re
-import sys
 import traceback
 
 from http import log
@@ -31,6 +30,7 @@ from web import error
 ###############################################################################
 # WSGIConnector Class
 ###############################################################################
+
 
 class WSGIConnector(object):
     """
@@ -85,7 +85,7 @@ class WSGIConnector(object):
         """
         route = re.compile("^%s(.*)$" % re.escape(route))
         application._insert_route(
-            route, self, "WSGIConnector", ['HEAD','GET','POST','PUT'], None,
+            route, self, "WSGIConnector", ['HEAD', 'GET', 'POST', 'PUT'], None,
             None)
 
     def __call__(self, request):
@@ -109,12 +109,12 @@ class WSGIConnector(object):
             'SCRIPT_NAME'       : '',
             'PATH_INFO'         : request.path,
             'QUERY_STRING'      : request.query,
-            'SERVER_NAME'       : request.headers.get('Host','127.0.0.1'),
+            'SERVER_NAME'       : request.headers.get('Host', '127.0.0.1'),
             'SERVER_PORT'       : request.connection.server.local_addr[1],
             'SERVER_PROTOCOL'   : request.version,
             'REMOTE_ADDR'       : request.remote_ip,
             'GATEWAY_INTERFACE' : 'WSGI/1.0',
-            'wsgi.version'      : (1,0),
+            'wsgi.version'      : (1, 0),
             'wsgi.url_scheme'   : request.protocol,
             'wsgi.input'        : cStringIO.StringIO(request.body),
             'wsgi.errors'       : sys.stderr,
@@ -133,18 +133,19 @@ class WSGIConnector(object):
         if 'Content-Length' in request.headers:
             environ['CONTENT_LENGTH'] = request.headers['Content-Length']
 
-        for k,v in request.headers.iteritems():
-            environ['HTTP_%s' % k.replace('-','_').upper()] = v
+        for k, v in request.headers.iteritems():
+            environ['HTTP_%s' % k.replace('-', '_').upper()] = v
 
         # Run the WSGI Application.
         try:
             result = self.app(environ, start_response)
-        except Exception, e:
+        except Exception:
             log.exception('Exception running WSGI application for: %s %s',
                 request.method, request.path)
 
             if not self.debug:
-                body, status, headers = error(500, request=request, debug=False)
+                body, status, headers = error(500, request=request,
+                                              debug=False)
             else:
                 resp = u''.join([
                     u"<h2>Traceback</h2>\n",
@@ -183,10 +184,13 @@ if __name__ == '__main__':
     import logging
     import sys
 
-    parser = OptionParser(usage="python -m pants.contrib.wsgi [options] module:callable")
+    usage = "python -m pants.contrib.wsgi [options] module:callable"
+    parser = OptionParser(usage=usage)
+
     parser.add_option("-b", "--bind", dest="bind", default=":80",
         help="Bind the server to the given interface:port, or UNIX socket.")
-    parser.add_option("-d", "--debug", dest="debug", action="store_true", default=False)
+    parser.add_option("-d", "--debug", dest="debug", action="store_true",
+                      default=False)
 
     options, args = parser.parse_args()
 
