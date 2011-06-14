@@ -34,7 +34,6 @@ except ImportError:
     ssl = None
     CERT_NONE = None
 
-from pants.engine import Engine
 from pants.network import Server
 from pants.stream import Stream
 
@@ -50,10 +49,12 @@ log = logging.getLogger('pants')
 # The startTLS Function
 ###############################################################################
 
+
 def is_secure(self):
     return hasattr(self, '_ssl_handshake_done')
 
 Stream.is_secure = is_secure
+
 
 def startTLS(self, keyfile=None, certfile=None, server_side=False,
                 cert_reqs=CERT_NONE, ca_certs=None, suppress_ragged_eofs=True,
@@ -99,6 +100,7 @@ def startTLS(self, keyfile=None, certfile=None, server_side=False,
 
 Stream.startTLS = startTLS
 
+
 def endTLS(self):
     if not isinstance(self._socket, ssl.SSLSocket):
         return
@@ -126,6 +128,7 @@ Stream.endTLS = endTLS
 # The Socket Wrapper and Cleanup
 ###############################################################################
 
+
 def wrapped_close(self):
     self.close = self._wrapped_close
     self.close()
@@ -143,6 +146,7 @@ def wrapped_close(self):
     del self.ssl_suppress_ragged_eofs
     del self._ssl_handshake_done
     del self._connect_on_ssl_done
+
 
 def _ssl_wrap(self):
     if not isinstance(self._socket, ssl.SSLSocket):
@@ -163,6 +167,7 @@ Stream._ssl_wrap = _ssl_wrap
 ###############################################################################
 # Stream._ssl_handshake
 ###############################################################################
+
 
 def _ssl_handshake(self):
     try:
@@ -198,6 +203,7 @@ Stream._ssl_handshake = _ssl_handshake
 # Socket Operations
 ###############################################################################
 
+
 def _socket_recv(self):
     try:
         return self._wrapped_socket_recv()
@@ -213,6 +219,7 @@ def _socket_recv(self):
 # Event Handling
 ###############################################################################
 
+
 def _handle_connect_event(self):
     err, srrstr = self._get_socket_error()
     if err == 0 and not self._ssl_handshake_done:
@@ -224,12 +231,14 @@ def _handle_connect_event(self):
 
     Stream._handle_connect_event(self)
 
+
 def _handle_read_event(self):
     if not self._ssl_handshake_done:
         self._ssl_handshake()
         return
 
     Stream._handle_read_event(self)
+
 
 def _handle_write_event(self):
     if not self._ssl_handshake_done:
