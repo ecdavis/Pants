@@ -153,11 +153,11 @@ class Engine(object):
         self.time = time.time()
 
         # Update timers.
-        for callback in self._callbacks[:]: # Copy list, since we modify it.
+        for callback in self._callbacks[:]:  # Copy list, since we modify it.
             try:
                 self._callbacks.remove(callback)
             except ValueError:
-                pass # Callback not present.
+                pass  # Callback not present.
             finally:
                 callback.run()
 
@@ -176,7 +176,7 @@ class Engine(object):
 
         # Update channels.
         if not self._channels:
-            time.sleep(poll_timeout) # Don't burn CPU.
+            time.sleep(poll_timeout)  # Don't burn CPU.
             return
 
         try:
@@ -195,12 +195,15 @@ class Engine(object):
                 if err[0] == errno.EPIPE:
                     # EPIPE: Broken pipe.
                     log.debug("Broken pipe on %s #%d." %
-                            (self._channels[fileno].__class__.__name___, fileno))
+                            (self._channels[fileno].__class__.__name___,
+                             fileno))
                     # TODO Close channel here?
                     self._channels[fileno].close()
                 else:
-                    log.exception("Error while handling I/O events on %s #%d." %
-                            (self._channels[fileno].__class__.__name__, fileno))
+                    msg = "Error while handling I/O events on %s #%d."
+                    log.exception(msg %
+                        (self._channels[fileno].__class__.__name__, fileno))
+
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception:
@@ -360,12 +363,12 @@ class Engine(object):
             try:
                 self._deferreds.remove(timer)
             except ValueError:
-                pass # Callback not present.
+                pass  # Callback not present.
         else:
             try:
                 self._callbacks.remove(timer)
             except ValueError:
-                pass # Callback not present.
+                pass  # Callback not present.
 
     ##### Poller Methods ######################################################
 
