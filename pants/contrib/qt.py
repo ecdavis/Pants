@@ -33,6 +33,7 @@ except ImportError:
 # _Qt Class
 ###############################################################################
 
+
 class _Qt(object):
     """
     A QSocketNotifier-based polling object.
@@ -155,6 +156,7 @@ class _Qt(object):
 ###############################################################################
 
 timer = None
+
 
 def install(app=None, timeout=0.02):
     """
