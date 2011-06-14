@@ -20,10 +20,15 @@
 # Imports
 ###############################################################################
 
+import logging
 import optparse
 import sys
+import time
 
-from pants.dns import *
+from pants.dns import DNS_FORMATERROR, DNS_NAMEERROR, DNS_NOTIMPLEMENTED, \
+        DNS_OK, DNS_REFUSED, DNS_SERVERFAILURE, DNS_TIMEOUT
+from pants.dns import A, AAAA, IN, OP_QUERY, OP_IQUERY, OP_STATUS, QTYPES
+from pants.dns import DNSMessage, hosts, host_path, list_dns_servers, sync
 
 ###############################################################################
 # Main
@@ -31,10 +36,10 @@ from pants.dns import *
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
-    parser.add_option("-d", "--debug", dest="debug", action="store_true", default=False,
-                help="Show extra messages.")
-    parser.add_option("--servers", dest="list", action="store_true", default=False,
-                help="List the discovered DNS servers.")
+    parser.add_option("-d", "--debug", dest="debug", action="store_true",
+                      default=False, help="Show extra messages.")
+    parser.add_option("--servers", dest="list", action="store_true",
+                      default=False, help="List the discovered DNS servers.")
     parser.add_option("--hosts", dest="lh", action="store_true", default=False,
                 help="List the entries loaded from the OS hosts file.")
 
@@ -56,12 +61,12 @@ if __name__ == '__main__':
 
         print ''
         print 'Detected IPv4 Hosts'
-        for k,v in hosts[A].iteritems():
+        for k, v in hosts[A].iteritems():
             print ' %-40s A     %s' % (k, v)
 
         print ''
         print 'Detected IPv6 Hosts'
-        for k,v in hosts[AAAA].iteritems():
+        for k, v in hosts[AAAA].iteritems():
             print ' %-40s AAAA  %s' % (k, v)
 
     if sys.platform == 'win32':
@@ -157,20 +162,29 @@ if __name__ == '__main__':
             rcode = 'Unknown (%d)' % rcode
 
         flags = []
-        if data.qr: flags.append('qr')
-        if data.aa: flags.append('aa')
-        if data.tc: flags.append('tc')
-        if data.rd: flags.append('rd')
-        if data.ra: flags.append('ra')
+        if data.qr:
+            flags.append('qr')
+        if data.aa:
+            flags.append('aa')
+        if data.tc:
+            flags.append('tc')
+        if data.rd:
+            flags.append('rd')
+        if data.ra:
+            flags.append('ra')
 
-        print 'opcode: %s; rcode: %s; id: %d; flags: %s' % (opcode, rcode, data.id, ' '.join(flags))
-        print 'queries: %d; answers: %d; authorities: %d; additional: %d' % (len(data.questions), len(data.answers), len(data.authrecords), len(data.additional))
+        print 'opcode: %s; rcode: %s; id: %d; flags: %s' % (opcode, rcode,
+                                                            data.id,
+                                                            ' '.join(flags))
+        print 'queries: %d; answers: %d; authorities: %d; additional: %d' % (
+            len(data.questions), len(data.answers), len(data.authrecords),
+            len(data.additional))
 
         print ''
         print 'Question Section'
         for name, qtype, qclass in data.questions:
             if qtype < len(QTYPES):
-                qtype = QTYPES[qtype-1]
+                qtype = QTYPES[qtype - 1]
             else:
                 qtype = str(qtype)
 
@@ -181,14 +195,16 @@ if __name__ == '__main__':
 
             print ' %-31s %-5s %s' % (name, qclass, qtype)
 
-        for lbl,lst in (('Answer', data.answers), ('Authority', data.authrecords), ('Additional', data.additional)):
+        for lbl, lst in (('Answer', data.answers),
+                         ('Authority', data.authrecords),
+                         ('Additional', data.additional)):
             if not lst:
                 continue
             print ''
             print '%s Section' % lbl
             for name, atype, aclass, ttl, rdata in lst:
                 if atype < len(QTYPES):
-                    atype = QTYPES[atype-1]
+                    atype = QTYPES[atype - 1]
                 else:
                     atype = str(atype)
 
@@ -197,7 +213,9 @@ if __name__ == '__main__':
                 else:
                     aclass = str(aclass)
 
-                print ' %-22s %-8d %-5s %-8s %s' % (name, ttl, aclass, atype, ' '.join(str(x) for x in rdata))
+                print ' %-22s %-8d %-5s %-8s %s' % (name, ttl, aclass, atype,
+                                                    ' '.join(str(x)
+                                                             for x in rdata))
 
         print ''
         print 'Query Time: %d msec' % int((end - start) * 1000)
