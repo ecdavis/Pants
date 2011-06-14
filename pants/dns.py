@@ -53,6 +53,10 @@ DNS_NAMEERROR = 3
 DNS_NOTIMPLEMENTED = 4
 DNS_REFUSED = 5
 
+# FIXME: This should probably be a real number, but it's being used here
+# without being defined
+DNS_BADRESPONSE = DNS_NOTIMPLEMENTED
+
 # DNS Listening Port
 DNS_PORT = 53
 
