@@ -23,7 +23,6 @@
 import socket
 
 from pants.channel import Channel
-from pants.engine import Engine
 
 
 ###############################################################################
@@ -38,11 +37,12 @@ log = logging.getLogger("pants")
 # Datagram Class
 ###############################################################################
 
+
 class Datagram(Channel):
     def __init__(self, **kwargs):
         if kwargs.setdefault("type", socket.SOCK_DGRAM) != socket.SOCK_DGRAM:
-            raise TypeError("Cannot create a %s with a type other than SOCK_DGRAM."
-                    % self.__class__.__name__)
+            msg = "Cannot create a %s with a type other than SOCK_DGRAM."
+            raise TypeError(msg % self.__class__.__name__)
 
         Channel.__init__(self, **kwargs)
 
@@ -89,7 +89,7 @@ class Datagram(Channel):
 
         try:
             self._socket_bind((host, port))
-        except socket.error, err:
+        except socket.error:
             self.close()
             raise
 
@@ -137,8 +137,8 @@ class Datagram(Channel):
         if addr is None:
             addr = self.remote_addr
             if addr[0] is None:
-                log.warning("Attempted to write to %s #%d with no remote address." %
-                        (self.__class__.__name__, self.fileno))
+                msg = "Attempted to write to %s #%d with no remote address."
+                log.warning(msg % (self.__class__.__name__, self.fileno))
                 return
 
         self._send_buffer.append((data, addr))
@@ -175,7 +175,7 @@ class Datagram(Channel):
         while True:
             try:
                 data, addr = self._socket_recvfrom()
-            except socket.error, err:
+            except socket.error:
                 log.exception("Exception raised by recvfrom() on %s #%d." %
                         (self.__class__.__name__, self.fileno))
                 # TODO Close this Datagram here?
@@ -230,7 +230,7 @@ class Datagram(Channel):
                     if mark == -1:
                         break
                     data = buf[:mark]
-                    buf = buf[mark+len(delimiter):]
+                    buf = buf[mark + len(delimiter):]
                     self._safely_call(self.on_read, data)
 
                 else:
@@ -280,6 +280,7 @@ class Datagram(Channel):
 ###############################################################################
 
 _datagram = None
+
 
 def sendto(data, host, port):
     """
