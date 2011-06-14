@@ -29,6 +29,7 @@ from http import log
 # WebSocketConnection Class
 ###############################################################################
 
+
 class WebSocketConnection(object):
     """
     Provides WebSocket communications on top of pants.contrib.http, using the
@@ -54,25 +55,25 @@ class WebSocketConnection(object):
                 you use server.channels to keep track of open connections.
                 Optional.
         """
-        self._connection    = conn = request.connection
-        self._request       = request
+        self._connection = conn = request.connection
+        self._request = request
 
         # State Storage
-        self._expect_frame  = True
-        self._in_buffer     = ""
-        self._read_buffer   = u""
-        self._state         = 0
+        self._expect_frame = True
+        self._in_buffer = ""
+        self._read_buffer = u""
+        self._state = 0
 
         # External Stuff
         self.read_delimiter = None
-        self.fileno         = conn.fileno
-        self.frame          = None
-        self.server         = server or conn.server
+        self.fileno = conn.fileno
+        self.frame = None
+        self.server = server or conn.server
 
         # Connect ourself to the connection.
-        conn.handle_read    = self._handle_read_event
-        conn.handle_write   = self._handle_write_event
-        conn.handle_close   = self._handle_close_event
+        conn.handle_read = self._handle_read_event
+        conn.handle_write = self._handle_write_event
+        conn.handle_close = self._handle_close_event
 
         # Don't negotiate if not necessary.
         if negotiated:
@@ -152,7 +153,8 @@ class WebSocketConnection(object):
 
     def send(self, data):
         """
-        A wrapper for WebSocketConnection.write() that can be safely overridden.
+        A wrapper for WebSocketConnection.write() that can be safely
+        overridden.
 
         Args:
             data: The data to be sent.
@@ -278,7 +280,7 @@ class WebSocketConnection(object):
 
             # Read the data.
             self._read_buffer += self._in_buffer[:ind].decode('utf-8')
-            self._in_buffer = self._in_buffer[ind+1:]
+            self._in_buffer = self._in_buffer[ind + 1:]
             self._expect_frame = True
 
         else:
@@ -310,7 +312,7 @@ class WebSocketConnection(object):
                 if ind == -1:
                     break
                 data = self._read_buffer[:ind]
-                self._read_buffer = self._read_buffer[ind+len(rd):]
+                self._read_buffer = self._read_buffer[ind + len(rd):]
 
             elif isinstance(rd, int):
                 if len(self._read_buffer) < rd:
@@ -343,6 +345,7 @@ class WebSocketConnection(object):
 # Support Functions
 ###############################################################################
 
+
 def challenge_response(headers, key3):
     """
     Calculate the response for a WebSocket security challenge and return it.
@@ -354,8 +357,11 @@ def challenge_response(headers, key3):
         n = ''
         s = 0
         for c in key:
-            if c.isdigit(): n += c
-            elif c == ' ': s += 1
+            if c.isdigit():
+                n += c
+            elif c == ' ':
+                s += 1
+
         n = int(n)
 
         if n > 4294967295 or s == 0 or n % s != 0:
@@ -365,8 +371,8 @@ def challenge_response(headers, key3):
         resp.update(
             chr(n >> 24 & 0xFF) +
             chr(n >> 16 & 0xFF) +
-            chr(n >> 8  & 0xFF) +
-            chr(n       & 0xFF)
+            chr(n >> 8 & 0xFF) +
+            chr(n & 0xFF)
         )
 
     resp.update(key3)
