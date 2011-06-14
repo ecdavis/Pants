@@ -35,20 +35,21 @@ log = logging.getLogger('irc')
 # Constants
 ###############################################################################
 
-__all__ = ('BaseIRC','IRCClient')
+__all__ = ('BaseIRC', 'IRCClient')
 
 COMMAND = re.compile(r"((?::.+? )?)(.+?) (.*)")
 NETMASK = re.compile(
     r":(?:(?:([^!\s]+)!)?([^@\s]+)@)?([A-Za-z0-9-/:?`[_^{|}\\\]\.]+)")
-ARGS    = re.compile(r"(?:^|(?<= ))(:.*|[^ ]+)")
-CTCP    = re.compile(r"([\x00\n\r\x10])")
-unCTCP  = re.compile(r"\x10([0nr\x10])")
+ARGS = re.compile(r"(?:^|(?<= ))(:.*|[^ ]+)")
+CTCP = re.compile(r"([\x00\n\r\x10])")
+unCTCP = re.compile(r"\x10([0nr\x10])")
 
-CODECS  = ('utf-8','iso-8859-1','cp1252')
+CODECS = ('utf-8', 'iso-8859-1', 'cp1252')
 
 ###############################################################################
 # BaseIRC Class
 ###############################################################################
+
 
 class BaseIRC(Stream):
     """
@@ -262,12 +263,13 @@ class BaseIRC(Stream):
 # IRCClient Class & Channel Class
 ###############################################################################
 
+
 class Channel(object):
     """
     An IRC channel's representation, for keeping track of users and the topic
     and stuff.
     """
-    __slots__ = ('name', 'users','topic','topic_setter','topic_time')
+    __slots__ = ('name', 'users', 'topic', 'topic_setter', 'topic_time')
 
     def __init__(self, name):
         self.name = name
@@ -275,6 +277,7 @@ class Channel(object):
         self.topic = None
         self.topic_setter = None
         self.topic_time = 0
+
 
 class IRCClient(BaseIRC):
     """
@@ -287,17 +290,17 @@ class IRCClient(BaseIRC):
         BaseIRC.__init__(self, socket, encoding)
 
         # Internal State Stuff
-        self._channels  = {}
-        self._joining   = []
+        self._channels = {}
+        self._joining = []
 
-        self._nick      = None
-        self._port      = 6667
-        self._server    = None
-        self._user      = None
-        self._realname  = None
+        self._nick = None
+        self._port = 6667
+        self._server = None
+        self._user = None
+        self._realname = None
 
         # External Stuff
-        self.password   = None
+        self.password = None
 
     ##### Properties ##########################################################
 
@@ -380,7 +383,6 @@ class IRCClient(BaseIRC):
                 self._server = server
             if port:
                 self._port = port
-
 
         Stream.connect(self, self._server, self._port)
 
@@ -648,7 +650,7 @@ class IRCClient(BaseIRC):
                     continue
 
                 message = msg[:ind]
-                msg = msg[ind+1:]
+                msg = msg[ind + 1:]
 
                 self.irc_ctcp(nick, message, user, host)
 
@@ -677,8 +679,8 @@ class IRCClient(BaseIRC):
         """
         We've been disconnected.
         """
-        self._channels  = {}
-        self._joining   = []
+        self._channels = {}
+        self._joining = []
 
         self.irc_close()
 
@@ -686,11 +688,13 @@ class IRCClient(BaseIRC):
 # Helper Functions
 ###############################################################################
 
+
 def ctcpQuote(message):
     """
     Low-level quote a message, adhering to the CTCP guidelines.
     """
     return CTCP.sub(_ctcpQuoter, message)
+
 
 def _ctcpQuoter(match):
     m = match.group(1)
@@ -705,11 +709,13 @@ def _ctcpQuoter(match):
     else:
         return m
 
+
 def ctcpUnquote(message):
     """
     Low-level unquote a message, adhering to the CTCP guidelines.
     """
     return unCTCP.sub(_ctcpUnquoter, message)
+
 
 def _ctcpUnquoter(match):
     m = match.group(1)
@@ -723,6 +729,7 @@ def _ctcpUnquoter(match):
         return '\x10'
     else:
         return m
+
 
 def decode(data):
     for codec in CODECS:
