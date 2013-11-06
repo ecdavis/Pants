@@ -3,13 +3,13 @@
 '''
 
 def items(mapping):
-    ''' returns the dictionary's item view '''
-    return getattr(dictionary, 'viewitems', dictionary.items)()
+    ''' returns the mapping's item view '''
+    return getattr(mapping, 'viewitems', mapping.items)()
 
 def keys(mapping):
-    ''' returns the dictionary's key view '''
-    return getattr(dictionary, 'viewkeys', dictionary.keys)()
+    ''' returns the mapping's key view '''
+    return getattr(mapping, 'viewkeys', mapping.keys)()
 
 def values(mapping):
-    ''' returns the dictionary's value view '''
-    return getattr(dictionary, 'viewvalues', dictionary.values)()
+    ''' returns the mapping's value view '''
+    return getattr(mapping, 'viewvalues', mapping.values)()
