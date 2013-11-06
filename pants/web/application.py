@@ -433,6 +433,7 @@ import traceback
 import urllib
 
 from datetime import datetime
+from numbers import Integral
 
 from pants.http.server import HTTPServer
 from pants.http.utils import HTTP, HTTPHeaders
@@ -1515,7 +1516,7 @@ class Application(Module):
             else:
                 body, status = result
                 headers = HTTPHeaders()
-                
+
         else:
             body = result
             headers = HTTPHeaders()
@@ -1797,7 +1798,7 @@ def error(message=None, status=None, headers=None, request=None, debug=None):
         request = Application.current_app.request
 
     if status is None:
-        if isinstance(message, (int, long)):
+        if isinstance(message, Integral):
             status, message = message, None
         else:
             status = 404
