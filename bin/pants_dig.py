@@ -24,8 +24,8 @@
 import optparse
 import sys
 
-from pants.util.dns import *
 from pants.compat import items
+from pants.util.dns import *
 
 ###############################################################################
 # Main
