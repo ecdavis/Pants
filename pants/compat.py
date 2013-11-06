@@ -15,6 +15,6 @@ def values(mapping):
     return getattr(mapping, 'viewvalues', mapping.values)()
 
 try:
-    basestring
+    basestring = basestring
 except NameError:
     basestring = str
