@@ -28,7 +28,6 @@ import re
 import time
 
 from datetime import datetime
-from itertools import imap
 
 from pants import __version__ as pants_version
 from pants.compat import items
@@ -232,26 +231,16 @@ class HTTPHeaders(object):
                 return 0
         return len(self._data) == len(other)
 
-    def iteritems(self, _normalize_header=_normalize_header):
-        for k, v in items(self._data):
-            yield _normalize_header(k), v
-
-    def iterkeys(self):
-        return imap(_normalize_header, self._data)
-
-    __iter__ = iterkeys
-
-    def itervalues(self):
-        return values(self._data)
-
     def items(self, _normalize_header=_normalize_header):
-        return [(_normalize_header(k), v) for k,v in items(self._data)]
+        return iter((_normalize_header(k), v) for k, v in items(self._data))
 
     def keys(self, _normalize_header=_normalize_header):
-        return [_normalize_header(k) for k in self._data]
+        return iter(_normalize_header(k) for k in self._data)
+
+    __iter__ = keys
 
     def values(self):
-        return self._data.values()
+        return values(self._data)
 
     def update(self, iterable=None, **kwargs):
         if iterable:
