@@ -25,6 +25,7 @@ import optparse
 import sys
 
 from pants.util.dns import *
+from pants.compat import items
 
 ###############################################################################
 # Main
@@ -58,12 +59,12 @@ if __name__ == '__main__':
 
         print ''
         print 'Detected IPv4 Hosts'
-        for k,v in hosts[A].iteritems():
+        for k, v in items(hosts[A]):
             print ' %-40s A     %s' % (k, v)
 
         print ''
         print 'Detected IPv6 Hosts'
-        for k,v in hosts[AAAA].iteritems():
+        for k, v in items(hosts[AAAA]):
             print ' %-40s AAAA  %s' % (k, v)
 
     if sys.platform == 'win32':
@@ -78,7 +79,7 @@ if __name__ == '__main__':
             qt = args.pop(0)
         else:
             qt = 'A'
-        
+
         qtype = []
         for t in qt.split(','):
             t = t.upper()
@@ -95,7 +96,7 @@ if __name__ == '__main__':
 
         # Build a Message
         m = DNSMessage()
-        
+
         for t in qtype:
             m.questions.append((host, t, IN))
 

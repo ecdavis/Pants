@@ -109,6 +109,8 @@ import select
 import sys
 import time
 
+from pants.compat import items
+
 
 ###############################################################################
 # Logging
@@ -312,7 +314,7 @@ class Engine(object):
             else:
                 raise
 
-        for fileno, events in events.iteritems():
+        for fileno, events in items(event):
             channel = self._channels[fileno]
             try:
                 channel._handle_events(events)
@@ -505,7 +507,7 @@ class Engine(object):
         =========  ============
         """
         if self._poller is not None:
-            for fileno, channel in self._channels.iteritems():
+            for fileno, channel in items(self._channels):
                 self._poller.remove(fileno, channel._events)
 
         if poller is not None:
@@ -517,7 +519,7 @@ class Engine(object):
         else:
             self._poller = _Select()
 
-        for fileno, channel in self._channels.iteritems():
+        for fileno, channel in items(self._channels):
             self._poller.add(fileno, channel._events)
 
 
