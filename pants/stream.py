@@ -103,7 +103,7 @@ code. Pants handles these errors by passing the resulting exception
 object to one of a number of error handler methods. They are:
 :meth:`~pants.stream.Stream.on_connect_error`,
 :meth:`~pants.stream.Stream.on_overflow_error` and
-:meth:`~pants.stream.Stream.on_error`. Additionally, 
+:meth:`~pants.stream.Stream.on_error`. Additionally,
 :meth:`~pants.stream.Stream.on_ssl_handshake_error` and
 :meth:`~pants.stream.Stream.on_ssl_error` exist to handle SSL-specific
 errors.
@@ -142,6 +142,7 @@ import socket
 import ssl
 import struct
 
+from pants.compat import basestring
 from pants._channel import _Channel, HAS_IPV6, sock_type
 from pants.engine import Engine
 

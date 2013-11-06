@@ -142,6 +142,7 @@ if sys.platform == "win32":
 else:
     from time import time
 
+from pants.compat import basestring
 from pants.stream import Stream
 from pants.server import Server
 
@@ -308,7 +309,7 @@ class HTTPConnection(Stream):
         except BadRequest as err:
             log.info('Bad request from %r: %s',
                 self.remote_address, err)
-            
+
             self.write('HTTP/1.1 %s%s' % (err.code, CRLF))
             if err.message:
                 self.write('Content-Type: text/html%s' % CRLF)

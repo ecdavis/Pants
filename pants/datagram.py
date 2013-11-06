@@ -27,6 +27,7 @@ import re
 import socket
 import struct
 
+from pants.compat import basestring
 from pants._channel import _Channel
 
 

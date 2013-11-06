@@ -29,6 +29,7 @@ import weakref
 from functools import wraps
 from types import GeneratorType
 
+from pants.compat import basestring
 from pants.http.utils import HTTPHeaders
 
 from pants.web.application import Application, error, Response, RequestContext

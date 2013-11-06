@@ -31,6 +31,7 @@ import socket
 import sys
 import time
 
+from pants.compat import basestring
 from pants.engine import Engine
 from pants.util.sendfile import sendfile
 
@@ -106,7 +107,7 @@ else:
 def sock_type(sock):
     """
     We can thank Linux for this abomination of a function.
-    
+
     As of Linux 2.6.27, bits 11-32 of the socket type are flags. This
     change was made with a complete lack of consideration for the fact
     that socket types are not flags, but are in fact "symbolic
@@ -114,7 +115,7 @@ def sock_type(sock):
     numbers. It is impossible to distinguish between some types (i.e.
     SOCK_STREAM and SOCK_RAW) using a simple bitwise AND, as one would
     expect from a flag value.
-    
+
     To get around this, we treat the first 9 bits as the "real" type.
     """
     return sock.type & 1023
