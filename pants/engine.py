@@ -314,7 +314,7 @@ class Engine(object):
             else:
                 raise
 
-        for fileno, events in items(event):
+        for fileno, events in items(events):
             channel = self._channels[fileno]
             try:
                 channel._handle_events(events)
