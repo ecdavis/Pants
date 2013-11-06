@@ -394,7 +394,7 @@ if __name__ == '__main__':
     # First, get the directory.
     path = os.path.realpath(args)
     if not os.path.exists(path) or not os.path.isdir(path):
-        print "The provided path %r is not a directory or does not exist." % path
+        print("The provided path %r is not a directory or does not exist.") % path
         sys.exit(1)
 
     # Parse the address.
@@ -415,7 +415,7 @@ if __name__ == '__main__':
     # Create the server now.
     app = Application()
     FileServer(path, [], indices).attach(app, '/')
-    print "Serving HTTP with Pants on: %s" % repr(address)
+    print("Serving HTTP with Pants on: %s") % repr(address)
 
     try:
         app.run(address)

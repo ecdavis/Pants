@@ -59,7 +59,7 @@ to pass it to your :class:`HTTPClient` during initialization.
 
     def handle_response(response):
         if response.status_code != 200:
-            print "There was a problem!"
+            print("There was a problem!")
 
     client = HTTPClient(handle_response)
 
@@ -442,7 +442,7 @@ class HTTPClient(object):
 
         def response_handler(response):
             Engine.instance().stop()
-            print response.content
+            print(response.content)
 
         client = HTTPClient(response_handler)
         client.get("http://httpbin.org/ip")
@@ -456,10 +456,10 @@ class HTTPClient(object):
 
         def response_handler(response):
             Engine.instance().stop()
-            print response.content
+            print(response.content)
 
         def other_handler(response):
-            print response.content
+            print(response.content)
 
         client = HTTPClient(response_handler)
         client.get("http://httpbin.org/cookies")

@@ -47,24 +47,24 @@ if __name__ == '__main__':
         logging.info('...')
 
     if options.list:
-        print ''
-        print 'Available DNS Servers'
+        print('')
+        print('Available DNS Servers')
         for i in list_dns_servers():
-            print ' %s' % i
+            print(' %s') % i
 
     if options.lh:
-        print ''
-        print 'Using: %s' % host_path
+        print('')
+        print('Using: %s') % host_path
 
-        print ''
-        print 'Detected IPv4 Hosts'
+        print('')
+        print('Detected IPv4 Hosts')
         for k,v in hosts[A].iteritems():
-            print ' %-40s A     %s' % (k, v)
+            print(' %-40s A     %s') % (k, v)
 
-        print ''
-        print 'Detected IPv6 Hosts'
+        print('')
+        print('Detected IPv6 Hosts')
         for k,v in hosts[AAAA].iteritems():
-            print ' %-40s AAAA  %s' % (k, v)
+            print(' %-40s AAAA  %s') % (k, v)
 
     if sys.platform == 'win32':
         timer = time.clock
@@ -78,7 +78,7 @@ if __name__ == '__main__':
             qt = args.pop(0)
         else:
             qt = 'A'
-        
+
         qtype = []
         for t in qt.split(','):
             t = t.upper()
@@ -88,18 +88,18 @@ if __name__ == '__main__':
                 try:
                     t = int(t)
                 except ValueError:
-                    print 'Invalid QTYPE, %r.' % t
+                    print('Invalid QTYPE, %r.') % t
                     sys.exit(1)
             qtype.append(t)
         qtype = tuple(qtype)
 
         # Build a Message
         m = DNSMessage()
-        
+
         for t in qtype:
             m.questions.append((host, t, IN))
 
-        print ''
+        print('')
 
         # Query it.
         start = timer()
@@ -110,34 +110,34 @@ if __name__ == '__main__':
             status = data.rcode
 
         if qtype == A and host in hosts[A]:
-            print "A record for %r in hosts: %s" % (host, hosts[A][host])
-            print ""
+            print("A record for %r in hosts: %s") % (host, hosts[A][host])
+            print("")
         elif qtype == AAAA and host in hosts[AAAA]:
-            print "AAAA record for %r in hosts: %s" % (host, hosts[AAAA][host])
-            print ""
+            print("AAAA record for %r in hosts: %s") % (host, hosts[AAAA][host])
+            print("")
 
         if status == DNS_OK:
-            print "Response: DNS_OK (%d)" % status
+            print("Response: DNS_OK (%d)") % status
         elif status == DNS_TIMEOUT:
-            print "Response: DNS_TIMEOUT (%d)" % status
+            print("Response: DNS_TIMEOUT (%d)") % status
         elif status == DNS_FORMATERROR:
-            print "Response: DNS_FORMATERROR (%d)" % status
+            print("Response: DNS_FORMATERROR (%d)") % status
         elif status == DNS_SERVERFAILURE:
-            print "Response: DNS_SERVERFAILURE (%d)" % status
+            print("Response: DNS_SERVERFAILURE (%d)") % status
         elif status == DNS_NAMEERROR:
-            print "Response: DNS_NAMEERROR (%d)" % status
+            print("Response: DNS_NAMEERROR (%d)") % status
         elif status == DNS_NOTIMPLEMENTED:
-            print "Response: DNS_NOTIMPLEMENTED (%d)" % status
+            print("Response: DNS_NOTIMPLEMENTED (%d)") % status
         elif status == DNS_REFUSED:
-            print "Response: DNS_REFUSED (%d)" % status
+            print("Response: DNS_REFUSED (%d)") % status
         else:
-            print "Response: UNKNOWN (%d)" % status
+            print("Response: UNKNOWN (%d)") % status
 
         if not data:
             if status == DNS_OK:
-                print "Empty response, but OK status? Something's wrong."
+                print("Empty response, but OK status? Something's wrong.")
             else:
-                print "Empty response."
+                print("Empty response.")
             continue
 
         opcode = 'UNKNOWN (%d)' % data.opcode
@@ -171,11 +171,11 @@ if __name__ == '__main__':
         if data.rd: flags.append('rd')
         if data.ra: flags.append('ra')
 
-        print 'opcode: %s; rcode: %s; id: %d; flags: %s' % (opcode, rcode, data.id, ' '.join(flags))
-        print 'queries: %d; answers: %d; authorities: %d; additional: %d' % (len(data.questions), len(data.answers), len(data.authrecords), len(data.additional))
+        print('opcode: %s; rcode: %s; id: %d; flags: %s') % (opcode, rcode, data.id, ' '.join(flags))
+        print('queries: %d; answers: %d; authorities: %d; additional: %d') % (len(data.questions), len(data.answers), len(data.authrecords), len(data.additional))
 
-        print ''
-        print 'Question Section'
+        print('')
+        print('Question Section')
         for name, qtype, qclass in data.questions:
             if qtype < len(QTYPES):
                 qtype = QTYPES[qtype-1]
@@ -187,13 +187,13 @@ if __name__ == '__main__':
             else:
                 qclass = str(qclass)
 
-            print ' %-31s %-5s %s' % (name, qclass, qtype)
+            print(' %-31s %-5s %s') % (name, qclass, qtype)
 
         for lbl,lst in (('Answer', data.answers), ('Authority', data.authrecords), ('Additional', data.additional)):
             if not lst:
                 continue
-            print ''
-            print '%s Section' % lbl
+            print('')
+            print('%s Section') % lbl
             for name, atype, aclass, ttl, rdata in lst:
                 if atype < len(QTYPES):
                     atype = QTYPES[atype-1]
@@ -205,11 +205,11 @@ if __name__ == '__main__':
                 else:
                     aclass = str(aclass)
 
-                print ' %-22s %-8d %-5s %-8s %s' % (name, ttl, aclass, atype, ' '.join(str(x) for x in rdata))
+                print(' %-22s %-8d %-5s %-8s %s') % (name, ttl, aclass, atype, ' '.join(str(x) for x in rdata))
 
-        print ''
-        print 'Query Time: %d msec' % int((end - start) * 1000)
-        print 'Server: %s' % str(data.server)
-        print 'Message Size: %d' % len(str(data))
+        print('')
+        print('Query Time: %d msec') % int((end - start) * 1000)
+        print('Server: %s') % str(data.server)
+        print('Message Size: %d') % len(str(data))
 
-    print ''
+    print('')

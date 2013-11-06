@@ -103,7 +103,7 @@ class TestReadDelimiterNetStruct(PantsTestCase):
         sock = socket.socket()
         sock.settimeout(1.0)
         sock.connect(('127.0.0.1', 4040))
-        print sock.send("\x00\x00\x05\x12\x00\x07default\x00\x00\x01\x00\x08")
+        print(sock.send("\x00\x00\x05\x12\x00\x07default\x00\x00\x01\x00\x08"))
         response = sock.recv(1024)
         sock.close()
         self.assertEqual(
