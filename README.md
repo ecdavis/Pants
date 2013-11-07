@@ -1,4 +1,4 @@
-[Pants](http://pantspowered.org/)
+[Pants](https://pants.readthedocs.org/en/latest/)
 =================================
 Pants is a lightweight framework for writing asynchronous network applications
 in Python. Pants is simple, fast and elegant.
@@ -8,7 +8,7 @@ Pants is available under the [Apache License, Version 2.0]
 
 Docs
 ====
-Check out the documentation at [pantspowered.org](http://pantspowered.org/)
+Check out the documentation at [pants.rtfd.org](https://pants.readthedocs.org/en/latest/)
 
 Install
 =======
