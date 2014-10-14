@@ -473,7 +473,7 @@ class _Channel(object):
         except socket.error as err:
             if err.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 return ''
-            elif err.args[0] == errno.ECONNRESET:
+            elif err.args[0] in (errno.ECONNRESET, errno.ECONNABORTED):
                 return None
             else:
                 raise
