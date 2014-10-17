@@ -1287,6 +1287,9 @@ class WebSocket(object):
                 mask = [ord(x) for x in self._recv_buffer[headlen:headlen+4]]
                 headlen += 4
 
+            if type(length) is tuple and len(length) == 1:
+                length = length[0]
+
             total_size = headlen + length
             if len(self._recv_buffer) < total_size:
                 if len(self._recv_buffer) > self._recv_buffer_size_limit:
