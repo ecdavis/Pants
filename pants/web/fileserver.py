@@ -130,13 +130,14 @@ class FileServer(object):
         FileServer("/tmp/path").attach(app, "/files/")
     """
     def __init__(self, path, blacklist=(re.compile('.*\.py[co]?$'), ),
-            defaults=('index.html', 'index.htm')):
+            defaults=('index.html', 'index.htm'), headers={}):
         # Make sure our path is unicode.
         if not isinstance(path, unicode):
             path = decode(path)
 
         self.path = os.path.normpath(os.path.realpath(path))
         self.defaults = defaults
+        self.headers = headers
 
         # Build the blacklist.
         self.blacklist = []
@@ -241,7 +242,7 @@ class FileServer(object):
 
         # Let's send the file.
         request.auto_finish = False
-        request.send_file(full_path)
+        request.send_file(full_path, headers=self.headers.copy())
 
 
     def list_directory(self, request, path):
