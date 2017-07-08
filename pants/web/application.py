@@ -434,6 +434,7 @@ import urllib
 
 from datetime import datetime
 
+from pants.compat import basestring
 from pants.http.server import HTTPServer
 from pants.http.utils import HTTP, HTTPHeaders
 
@@ -1515,7 +1516,7 @@ class Application(Module):
             else:
                 body, status = result
                 headers = HTTPHeaders()
-                
+
         else:
             body = result
             headers = HTTPHeaders()

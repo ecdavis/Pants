@@ -23,6 +23,7 @@
 import logging
 import re
 
+from pants.compat import basestring
 from pants.stream import Stream
 
 ###############################################################################

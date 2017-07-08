@@ -332,6 +332,7 @@ if sys.platform == "win32":
 else:
     from time import time
 
+from pants.compat import basestring
 from pants.stream import StreamBufferOverflow
 from pants.http.utils import log
 

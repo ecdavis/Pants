@@ -221,6 +221,7 @@ import zlib
 
 from datetime import datetime
 
+from pants.compat import basestring
 from pants.stream import Stream
 from pants.engine import Engine
 

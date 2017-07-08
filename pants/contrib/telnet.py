@@ -23,6 +23,7 @@
 import re
 import struct
 
+from pants.compat import basestring
 from pants import Stream, Server
 
 try:
