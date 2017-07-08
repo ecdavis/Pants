@@ -32,6 +32,7 @@ import struct
 import sys
 import time
 
+from pants.compat import items
 from pants.engine import Engine
 from pants.stream import Stream
 from pants.datagram import Datagram
@@ -116,7 +117,7 @@ RDATA_TYPES = {
 
 RDATA_TUPLES = {}
 
-for k,v in RDATA_TYPES.iteritems():
+for k,v in items(RDATA_TYPES):
     # Get the Name.
     nm = '%s_Record' % QTYPES[k-1]
 

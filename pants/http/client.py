@@ -221,6 +221,7 @@ import zlib
 
 from datetime import datetime
 
+from pants.compat import items
 from pants.stream import Stream
 from pants.engine import Engine
 
@@ -781,7 +782,7 @@ class HTTPClient(object):
         self._stream.write("%s %s HTTP/1.1%s" % (request.method, path, CRLF))
 
         # Headers
-        for key, val in request.headers.iteritems():
+        for key, val in items(request.headers):
             self._stream.write("%s: %s%s" % (key, val, CRLF))
 
         # Cookies
@@ -1144,7 +1145,7 @@ class HTTPClient(object):
         del response._additional_headers
 
         # Extend the original headers.
-        for key, val in headers.iteritems():
+        for key, val in items(headers):
             if not key in response.headers:
                 response.headers[key] = val
             else:

@@ -21,11 +21,12 @@ import unittest
 
 import pants
 
+from pants.compat import values
 from pants.test._pants_util import *
 
 class EchoToAll(pants.Stream):
     def on_read(self, data):
-        for channel in self.server.channels.itervalues():
+        for channel in values(self.server.channels):
             channel.write(data)
 
 class TestEchoToAll(PantsTestCase):

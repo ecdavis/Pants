@@ -31,6 +31,7 @@ from datetime import datetime
 from itertools import imap
 
 from pants import __version__ as pants_version
+from pants.compat import items
 
 
 ###############################################################################
@@ -216,7 +217,7 @@ class HTTPHeaders(object):
             self.update(data)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, dict(self.iteritems()))
+        return "%s(%r)" % (self.__class__.__name__, self._data)
 
     def __len__(self):
         return len(self._data)
@@ -225,14 +226,14 @@ class HTTPHeaders(object):
         if isinstance(other, HTTPHeaders):
             return self._data == other._data
 
-        for k, v in self._data.iteritems():
+        for k, v in items(self._data):
             k = _normalize_header(k)
             if not (k in other) or not (other[k] == v):
                 return 0
         return len(self._data) == len(other)
 
     def iteritems(self, _normalize_header=_normalize_header):
-        for k, v in self._data.iteritems():
+        for k, v in items(self._data):
             yield _normalize_header(k), v
 
     def iterkeys(self):
@@ -241,10 +242,10 @@ class HTTPHeaders(object):
     __iter__ = iterkeys
 
     def itervalues(self):
-        return self._data.itervalues()
+        return values(self._data)
 
     def items(self, _normalize_header=_normalize_header):
-        return [(_normalize_header(k), v) for k,v in self._data.iteritems()]
+        return [(_normalize_header(k), v) for k,v in items(self._data)]
 
     def keys(self, _normalize_header=_normalize_header):
         return [_normalize_header(k) for k in self._data]
@@ -261,7 +262,7 @@ class HTTPHeaders(object):
                 for (k,v) in iterable:
                     self[k] = v
 
-        for k,v in kwargs.iteritems():
+        for k,v in items(kwargs):
             self[k] = v
 
     def __setitem__(self, key, value):
@@ -336,10 +337,10 @@ def encode_multipart(vars, files=None, boundary=None):
 
     out = []
 
-    for k, v in vars.iteritems():
+    for k, v in items(vars):
         out.append('--%s%sContent-Disposition: form-data; name="%s"%s%s%s' % (boundary, CRLF, k, DOUBLE_CRLF, v, CRLF))
     if files:
-        for k, v in files.iteritems():
+        for k, v in items(files):
             if isinstance(v, (list,tuple)):
                 fn, v = v
             else:
