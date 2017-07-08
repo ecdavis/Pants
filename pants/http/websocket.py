@@ -327,6 +327,8 @@ import re
 import struct
 import sys
 
+from numbers import Integral
+
 if sys.platform == "win32":
     from time import clock as time
 else:
@@ -742,7 +744,7 @@ class WebSocket(object):
             self._read_delimiter = value
             self._recv_buffer_size_limit = self._buffer_size
 
-        elif isinstance(value, (int, long)):
+        elif isinstance(value, Integral):
             self._read_delimiter = value
             self._recv_buffer_size_limit = max(self._buffer_size, value)
 
@@ -805,10 +807,10 @@ class WebSocket(object):
 
     @buffer_size.setter
     def buffer_size(self, value):
-        if not isinstance(value, (long, int)):
+        if not isinstance(value, Integral):
             raise TypeError("buffer_size must be an int or a long")
         self._buffer_size = value
-        if isinstance(self._read_delimiter, (int, long)):
+        if isinstance(self._read_delimiter, Integral):
             self._recv_buffer_size_limit = max(value, self._read_delimiter)
         elif isinstance(self._read_delimiter, Struct):
             self._recv_buffer_size_limit = max(value,
@@ -1410,7 +1412,7 @@ class WebSocket(object):
                 self._rb_type = None
                 self._safely_call(self.on_read, data)
 
-            elif isinstance(delimiter, (int, long)):
+            elif isinstance(delimiter, Integral):
                 size = len(self._read_buffer)
                 if size < delimiter:
                     break
@@ -1497,7 +1499,7 @@ class WebSocket(object):
                     self._read_buffer = self._read_buffer[self._netstruct_needed:]
 
                 data = self._netstruct_iter.send(data)
-                if isinstance(data, (int, long)):
+                if isinstance(data, Integral):
                     self._netstruct_needed = data
                     continue
 

@@ -27,6 +27,8 @@ import re
 import socket
 import struct
 
+from numbers import Integral
+
 from pants._channel import _Channel
 
 
@@ -274,7 +276,7 @@ class Datagram(_Channel):
                     self._safely_call(self.on_read, buf)
                     buf = ""
 
-                elif isinstance(delimiter, (int, long)):
+                elif isinstance(delimiter, Integral):
                     if len(buf) < delimiter:
                         break
                     data = buf[:delimiter]

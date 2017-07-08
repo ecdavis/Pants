@@ -103,7 +103,7 @@ code. Pants handles these errors by passing the resulting exception
 object to one of a number of error handler methods. They are:
 :meth:`~pants.stream.Stream.on_connect_error`,
 :meth:`~pants.stream.Stream.on_overflow_error` and
-:meth:`~pants.stream.Stream.on_error`. Additionally, 
+:meth:`~pants.stream.Stream.on_error`. Additionally,
 :meth:`~pants.stream.Stream.on_ssl_handshake_error` and
 :meth:`~pants.stream.Stream.on_ssl_error` exist to handle SSL-specific
 errors.
@@ -141,6 +141,8 @@ import re
 import socket
 import ssl
 import struct
+
+from numbers import Integral
 
 from pants._channel import _Channel, HAS_IPV6, sock_type
 from pants.engine import Engine
@@ -389,7 +391,7 @@ class Stream(_Channel):
             self._read_delimiter = value
             self._recv_buffer_size_limit = self._buffer_size
 
-        elif isinstance(value, (int, long)):
+        elif isinstance(value, Integral):
             self._read_delimiter = value
             self._recv_buffer_size_limit = max(self._buffer_size, value)
 
@@ -446,10 +448,10 @@ class Stream(_Channel):
 
     @buffer_size.setter
     def buffer_size(self, value):
-        if not isinstance(value, (long, int)):
+        if not isinstance(value, Integral):
             raise TypeError("buffer_size must be an int or a long")
         self._buffer_size = value
-        if isinstance(self._read_delimiter, (int, long)):
+        if isinstance(self._read_delimiter, Integral):
             self._recv_buffer_size_limit = max(value, self._read_delimiter)
         elif isinstance(self._read_delimiter, Struct):
             self._recv_buffer_size_limit = max(value,
@@ -934,7 +936,7 @@ class Stream(_Channel):
                 self._recv_buffer = ""
                 self._safely_call(self.on_read, data)
 
-            elif isinstance(delimiter, (int, long)):
+            elif isinstance(delimiter, Integral):
                 if len(self._recv_buffer) < delimiter:
                     break
                 data = self._recv_buffer[:delimiter]
@@ -980,7 +982,7 @@ class Stream(_Channel):
                     self._recv_buffer[:self._netstruct_needed])
                 self._recv_buffer = self._recv_buffer[self._netstruct_needed:]
 
-                if isinstance(data, (int,long)):
+                if isinstance(data, Integral):
                     self._netstruct_needed = data
                     continue
 

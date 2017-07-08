@@ -23,6 +23,8 @@
 import re
 import struct
 
+from numbers import Integral
+
 from pants import Stream, Server
 
 try:
@@ -134,7 +136,7 @@ class TelnetConnection(Stream):
                 self._telnet_data = ''
                 self._safely_call(self.on_read, data)
 
-            elif isinstance(delimiter, (int, long)):
+            elif isinstance(delimiter, Integral):
                 if len(self._telnet_data) < delimiter:
                     break
                 data = self._telnet_data[:delimiter]
@@ -179,7 +181,7 @@ class TelnetConnection(Stream):
                     self._telnet_data[:self._netstruct_needed])
                 self._telnet_data = self._telnet_data[self._netstruct_needed:]
 
-                if isinstance(data, (int,long)):
+                if isinstance(data, Integral):
                     self._netstruct_needed = data
                     continue
 
