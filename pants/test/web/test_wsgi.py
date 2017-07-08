@@ -87,8 +87,8 @@ class WSGIServerTest(WSGITestCase):
         try:
             self.logic(env, start_response)
         except AssertionError as err:
-            print err
-            print ""
+            print(err)
+            print("")
             self.passed = False
 
         if not self.passed:

@@ -67,7 +67,7 @@ class BasicTest(HTTPTestCase):
 @unittest.skipIf(requests is None, "requests library not installed")
 class ExceptionTest(HTTPTestCase):
     def request_handler(self, request):
-        print pie
+        print(pie)
 
     def test_exception(self):
         response = requests.get("http://127.0.0.1:4040/", timeout=0.5)
