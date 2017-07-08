@@ -156,7 +156,7 @@ class WSGIConnector(object):
                 raise ValueError("status must be a string or int")
             if not isinstance(head, list):
                 if isinstance(head, dict):
-                    head = [(k,v) for k,v in head.iteritems()]
+                    head = list(items(head))
                 else:
                     try:
                         head = list(head)
@@ -210,7 +210,7 @@ class WSGIConnector(object):
         if 'Content-Length' in request.headers:
             environ['CONTENT_LENGTH'] = request.headers['Content-Length']
 
-        for k,v in request.headers._data.iteritems():
+        for k,v in items(request.headers._data):
             environ['HTTP_%s' % k.replace('-','_').upper()] = v
 
         # Run the WSGI Application.

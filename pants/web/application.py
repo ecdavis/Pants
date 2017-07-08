@@ -434,6 +434,7 @@ import urllib
 
 from datetime import datetime
 
+from pants.compat import items
 from pants.http.server import HTTPServer
 from pants.http.utils import HTTP, HTTPHeaders
 
@@ -1209,24 +1210,24 @@ class Application(Module):
         # Update the hooks system.
         if hooks:
             new_hooks = {}
-            for k, v in hooks.iteritems():
+            for k, v in items(hooks):
                 new_hooks[k] = v[:]
             hooks = new_hooks
         else:
             hooks = {}
 
-        for k,v in mod_hooks.iteritems():
+        for k,v in items(mod_hooks):
             if k in hooks:
                 hooks[k].extend(v)
             else:
                 hooks[k] = v[:]
 
         # Iterate through modules first, so our own rules are more important.
-        for rule, mod in modules.iteritems():
+        for rule, mod in items(modules):
             self._recalculate_routes(None, rule, mod, nameprefix, hooks)
 
         # Iterate through the unprocessed route table.
-        for rule, table in routes.iteritems():
+        for rule, table in items(routes):
             # If path is set, and this isn't an absolute rule, merge the rule
             # with the path.
             if path and (rule[0] == "/" or not "/" in rule):
@@ -1270,7 +1271,7 @@ class Application(Module):
 
             # Iterate through all the methods this rule provides.
             for method, (func, name, advanced, auto404, headers, content_type) \
-                    in table.iteritems():
+                    in items(table):
                 method = method.upper()
                 if method == 'GET' or rl[3] is None:
                     if nameprefix:
@@ -1515,7 +1516,7 @@ class Application(Module):
             else:
                 body, status = result
                 headers = HTTPHeaders()
-                
+
         else:
             body = result
             headers = HTTPHeaders()

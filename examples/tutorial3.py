@@ -1,4 +1,5 @@
 from pants import Engine, Server, Stream
+from pants.compat import values
 
 class EchoLineToAll(Stream):
     def on_connect(self):
@@ -15,7 +16,7 @@ class EchoLineToAllServer(Server):
     ConnectionClass = EchoLineToAll
 
     def write_to_all(self, data):
-        for channel in self.channels.itervalues():
+        for channel in values(self.channels):
             if channel.connected:
                 channel.write(data)
 

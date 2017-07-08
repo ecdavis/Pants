@@ -29,6 +29,7 @@ import weakref
 from functools import wraps
 from types import GeneratorType
 
+from pants.compat import items
 from pants.http.utils import HTTPHeaders
 
 from pants.web.application import Application, error, Response, RequestContext
@@ -495,7 +496,7 @@ def _event_stream_output(request, output):
     # Split up output, adding "data:" field names, and then prepend the
     # provided headers, if there are any.
     output = "\r\n".join("data: %s" % x for x in output.splitlines())
-    for key, value in headers.iteritems():
+    for key, value in items(headers):
         output = "%s: %s\r\n%s" % (key, _cast(request, value), output)
 
     # Write it out, with an extra blank line so that the client will read

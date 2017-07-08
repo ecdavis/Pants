@@ -142,6 +142,7 @@ if sys.platform == "win32":
 else:
     from time import time
 
+from pants.compat import items
 from pants.stream import Stream
 from pants.server import Server
 
@@ -308,7 +309,7 @@ class HTTPConnection(Stream):
         except BadRequest as err:
             log.info('Bad request from %r: %s',
                 self.remote_address, err)
-            
+
             self.write('HTTP/1.1 %s%s' % (err.code, CRLF))
             if err.message:
                 self.write('Content-Type: text/html%s' % CRLF)
@@ -469,7 +470,7 @@ class HTTPRequest(object):
             thing = getattr(self, i)
             if thing:
                 if isinstance(thing, HTTPHeaders):
-                    thing = dict(thing.iteritems())
+                    thing = dict(items(thing))
                 out += u'    %-8s = {\n %s\n        }\n\n' % (
                     i, pprint.pformat(thing, 8)[1:-1])
             else:
@@ -596,7 +597,7 @@ class HTTPRequest(object):
         m['httponly'] = True
 
         if kwargs:
-            for k, v in kwargs.iteritems():
+            for k, v in items(kwargs):
                 if k.lower() == 'httponly' and not v:
                     del m['httponly']
                 else:
